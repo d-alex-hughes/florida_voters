@@ -1,0 +1,371 @@
+---
+title: "Analysis: Email Mobilization Messages Suppress Turnout Among Black and Latino Voters: Experimental Evidence From the 2016 General Election"
+author: "Michael U. Rivera, D. Alex Hughes, Micah Gell-Redman"
+output: github_document
+---
+
+# Setup 
+
+Load packages. 
+
+```{r load packages, message=FALSE}
+library(data.table)
+library(lfe)
+library(sandwich)
+library(stargazer)
+
+knitr::opts_chunk$set(dpi = 300)
+```
+
+Remove anything from the working directory and print the system frame we're working with. 
+
+```{r clean working directory}
+rm(list = ls())
+sys.frame()
+```
+
+Load functions for analysis. 
+
+```{r load functions}
+source('/home/rstudio/src/functions.R')
+```
+
+We exclude from this sample voters who voted early, but we include voters who voted by mail. In the SI, we examine the consequences of changing the analytic frame to include vote-by-mail voters. There is no substantive change in the interpretation of any result, though the effects are slightly stronger. An interested researcher could change the exclusion set here to exclude vote-by-mail voters by changing the `exclusion_set` variable to be `exclusion_set <- c('E', 'A')`
+
+```{r set exclusion set}
+exclusion_set <- c('E')
+```
+
+# Load Data 
+
+Load data using the `load_and_clean_data` function described in `./src/`. This uses `data.table::fread` and then recodes variables for use. If the researcher has saved a local copy of the data, they can set `load_and_clean_data` to read from the locally saved file. Or, if the researcher is reading from the remotly stored data (e.g. the s3 bucket or Dataverse), they can pass the URL of that data. 
+
+```{r load data}
+d <- load_and_clean_data('https://florida-voters.s3-us-west-1.amazonaws.com/subset_finalAnalysisFile20170711.csv')
+# d <- load_and_clean_data(f = '/home/rstudio/data/subset_finalAnalysisFile20170711.csv')
+```
+
+# Analysis 
+## Simple Descriptive Statistics
+
+Our overall turnout is in line with repoerts from the (Florida Secretary of State)[https://dos.myflorida.com/elections/data-statistics/elections-data/voter-turnout/]. 
+
+```{r average turnout}
+d[ , mean(outcome)]
+```
+
+We also report the proportion of voters voting early, with a slight discrepancy due to our data being more up to date than those of the Department of State.
+
+```{r early voting rate}
+d[ , sum(historyCode2016 == 'E')]
+```
+
+The same is true for voting by mail
+
+```{r vote by mail rate}
+d[ , sum(historyCode2016 == 'A')]
+```
+
+In total, how many people voted *before* the election took place?
+
+```{r total early voters}
+format(d[historyCode2016 %in% c("A", "E"), .N], big.mark = ',')
+```
+
+What is that, as a proportion of the total registered voting set in FL?
+
+```{r proportion of voters who voted early}
+d[ , sum(historyCode2016 %in% c('A', 'E'))/ .N]
+```
+
+Among the analytic sample the turnout rate is: 
+
+```{r turnout rate in analytic sample}
+d[!(historyCode2016 %in% exclusion_set), mean(outcome)]
+```
+
+Approximately 5% of the Florida voting population provide an email address. 
+
+```{r valid email address rate}
+d[ , mean(validEmail)]
+```
+
+The rate of email address provision is lower in among the analytic sample 
+
+```{r valid email address rate in analytic sample}
+d[!(historyCode2016 %in% exclusion_set), mean(validEmail)]
+```
+
+## Summary Tables
+
+This section produces tables that are Table 2 in the published text. This first table compares people who provide email addresses to those who do not provide email addresses. It also shows how the analytic sample -- those who provide email addresses and do not vote early -- compare to the general population. 
+
+```{r summary tables}
+
+## Build Tables one at a time. 
+
+summary_table <- d[ , .(
+    "Two Party Dem. VS" = sum(party=="DEM") / sum(party%in%c("DEM", "REP")),
+    "SE" = (sum(party=="DEM") / sum(party%in%c("DEM", "REP"))*(1-sum(party=="DEM") / sum(party%in%c("DEM", "REP"))))/.N,
+    "Age in 2016" = mean(age, na.rm=TRUE),
+    "SE" = sem(age),
+    "Proportion Female" = mean(gender=="F", na.rm=TRUE),
+    "SE" = sem(gender=="F"),
+    "Proportion non-White" = mean(minority, na.rm=TRUE),
+    "SE"  = sem(minority),
+    "N" = .N
+    ), 
+    by = .("Data Set" = validEmail)]
+
+summary_table_1 <- t(summary_table)
+
+## Now, compare only the experimental Data 
+summary_table <- d[
+    treat %in% 0:4,
+    .("Data Set" = 2, 
+      "Two Party Dem. VS" = sum(party=="DEM") / sum(party%in%c("DEM", "REP")),
+      "SE" = (sum(party=="DEM") / sum(party%in%c("DEM", "REP"))*(1-sum(party=="DEM") / sum(party%in%c("DEM", "REP"))))/.N,
+      "Age in 2016" = mean(age, na.rm=TRUE),
+      "SE" = sem(age),
+      "Proportion Female" = mean(gender=="F", na.rm=TRUE),
+      "SE" = sem(gender=="F"),
+      "Proportion non-White" = mean(minority, na.rm=TRUE),
+      "SE"  = sem(minority),
+      "N" = .N)]
+
+summary_table_2 <- t(summary_table)
+
+## now only analytic sample 
+summary_table <- d[
+    treat %in% 0:4 & !(historyCode2016 %in% exclusion_set),
+    .("Data Set " = 3, 
+      "Two Party Dem. VS" = sum(party=="DEM") / sum(party%in%c("DEM", "REP")),
+      "SE" = (sum(party=="DEM") / sum(party%in%c("DEM", "REP"))*(1-sum(party=="DEM") / sum(party%in%c("DEM", "REP"))))/.N,
+      "Age in 2016" = mean(age, na.rm=TRUE),
+      "SE" = sem(age),
+      "Proportion Female" = mean(gender=="F", na.rm=TRUE),
+      "SE" = sem(gender=="F"),
+      "Proportion non-White" = mean(minority, na.rm=TRUE),
+      "SE"  = sem(minority),
+      "N" = .N)]
+
+summary_table_3 <- t(summary_table)
+
+## Combine these tables 
+summary_table <- cbind(summary_table_1, summary_table_2, summary_table_3)
+
+## And print to the screen. 
+stargazer(
+  summary_table, 
+  type = "text", 
+  title = "Comparison of Email Providers",
+  summary=F, digits=3
+  )
+```
+
+## Randomization Check
+
+First, look at everybody: remember these all need be pre-treatment. As well, remember that people who do /not/ provide emails are
+not being used in our comparison. So, differences between them and the treatment sets are (a) to be expected and (b) are going to fall out when we conduct the analysis.
+
+```{r randomization check}
+randomizationCheck <- d[
+    !(is.na(treat)) , .(
+      "Two Party D VS." = sum(party=="DEM") / sum(party%in%c("DEM", "REP")),
+        "SE" = (sum(party=="DEM") / sum(party%in%c("DEM", "REP"))) * (1 - sum(party=="DEM") / sum(party%in%c("DEM", "REP")))/.N,
+        "Voted in 2016"  = mean(general12, na.rm = TRUE),
+        "SE" = sem(general12),
+        "Age in 2016" = mean(age, na.rm=TRUE),
+        "SE" = sem(age),
+        "Proportion Female" = mean(gender=="F", na.rm=TRUE),
+        "SE" = sem(gender=="F"),
+        "Proportion non-White"  = mean(minority, na.rm=TRUE),
+        "SE" = sem(minority),
+        "Observations" = .N),
+    keyby = .(treat)]
+randomizationCheck[ , treat := c('Control', 'Baseline', 'General Norm', 'Ethnic Norm 1', 'Ethnic Norm 2')]
+
+randomizationCheck <- t(randomizationCheck)
+
+stargazer(randomizationCheck,
+          type="text",
+          summary=F, digits=2, digits.extra=0,
+          title="Covariate Balance Check", 
+          column.labels = c('Control', 'Baseline', 'General Social Norm', 'Ethnic Norm 1', 'Ethnic Norm 2')
+        )
+```
+Consistent with Green and Gerber (2012), here we examine whether any of the covariate featuers that we posess predict treatment. There is no evidence of a problem. 
+
+```{r green and gerber check}
+anova_data <- na.omit(d, cols = c("general12", "gender", "race", "party", "congressionalDistrict", "recent", "treat"))
+
+conditions <- 1:4
+for(i in 1:length(conditions)) {
+    short_model = lm(I(treat == 0) ~ 1, data=anova_data[treat %in% c(0, conditions[i])])
+    long_model  = lm(I(treat == 0) ~ 1 + general12 + gender + race
+                     + party + congressionalDistrict + recent,
+                     data = anova_data[treat%in%c(0, conditions[i])])
+    print(anova(long_model, short_model, test = 'F')[[6]][2])
+}
+```
+
+## Analysis of Treatment
+
+As a reminder, the treatment indicator is coded in the following way: 
+    
+    0: Control 
+    1: baseline. "information" 
+    2: baseline, "social pressure"
+    3: "native threat" 
+    4: "latino group threat"
+
+Compute the mean and standard error of the mean for all individuals assigned to a treatment in the analytic sample. 
+
+```{r mean and sem in analytic sample}
+d[ treat %in% 0:4 & !(historyCode2016 %in% exclusion_set),
+  .(meanVote = mean(outcome),
+    semVote  = sem(outcome) ),
+  keyby = .(treat) ] 
+```
+
+These models are the core models reported in the text. 
+
+```{r core linear models of treatment effect}
+model0 <- d[treat %in% 0:4 & !(historyCode2016 %in% exclusion_set), 
+            lm(outcome ~ factor(treat != 0))]
+model1 <- d[treat %in% 0:4 & !(historyCode2016 %in% exclusion_set),
+            lm(outcome ~ factor(treat!=0) + factor(major_party) + race3
+            + age + I(age^2) + registrationYear)]
+
+## This model, model1_fe, is the principle model reported in the text, both for the 
+## results section in text, and also the plots and are included. Note that 
+## the results in this model are _very_ similar to those in model1 reported above. 
+
+model1_fe <- d[treat %in% 0:4 & !(historyCode2016 %in% exclusion_set),
+               felm(outcome ~ factor(treat != 0) + factor(major_party) + race3
+            + age + I(age^2) + registrationYear | factor(congressionalDistrict))]
+model2 <- d[treat %in% 0:4 & !(historyCode2016 %in% exclusion_set),
+            lm(outcome ~ factor(treat) + factor(major_party) + race3
+            + age + I(age^2) + registrationYear)]
+model2_fe <- d[treat %in% 0:4 & !(historyCode2016 %in% exclusion_set),
+               felm(outcome ~ factor(treat) + factor(major_party) + race3
+            + age + I(age^2) + registrationYear | factor(congressionalDistrict))]
+```
+
+Print the core results tables. 
+
+```{r print core results tables}
+stargazer(model0, model1, model1_fe, model2, model2_fe,
+          type = 'text', 
+          se = list(
+           ols_rses(model0), ols_rses(model1), felm_rses(model1_fe), 
+           ols_rses(model2), felm_rses(model2_fe)),
+          covariate.labels = c(
+            'Any Email', 'Baseline', 'General Descriptive Social Norm',
+            'Ethnic Descriptive Social Norm 1', 'Ethnic Descriptive Social Norm 2', 
+            'Republican', 'Independent', 
+            'Black', 'Latino', 'Other', 
+            'Age', 'Age2', 'Registration Year'),
+          omit.stat = c('ser', 'F'), 
+          digits = 4, 
+          add.lines = list(
+            c('Congressional District FE', 'No', 'No', 'Yes', 'No', 'Yes')),
+          title = 'Main Effects of Treatment'
+)
+```
+
+There is no evidence of message effects. To test for this, we conduct an anova of a model that stipulates all messages have the same effect against a model that allows each model to have an unique effect. Rejecting the null hypothesis would indicate that there is a message-based effect. But, there is no such evidence. 
+
+```{r anova for message effects}
+anova_result <- anova(model2, model1, test = "F")
+anova_result
+```
+
+As is evident in the analysis above, there is little evidence to suggest that there is a difference in turnout, based on the message sent to voters. The lack of effect is evident in the following plot.  
+
+```{r plot_message_effects}
+plot_message(model2_fe, make_pdf = FALSE)
+```
+
+## Treatment Effects Among Specific Groups
+
+The average rate of turnout among those in the analytic sample who were assigned to control is about 78.7. 
+
+```{r analytic sample control group}
+mu_control <- round(d[treat %in% 0 & !(historyCode2016 %in% exclusion_set), mean(outcome)], 4)
+mu_control
+```
+
+How many people are there in each racial/ethnic group? 
+
+```{r count of people in racial-ethnic groups}
+d[treat %in% 0:4 & !(historyCode2016 %in% exclusion_set), .N, keyby = .(race3)]
+```
+
+The by group estimates reported in the main body of the paper work in the following way: 
+
+1. We estimate the average turnout in control, for each racial / ethnic group with a simple mean.
+2. We report the treatment/control difference that is estimated from a model 
+   that includes fixed effects for each congressional district, as well as a small set of control 
+   variables for precision. 
+
+Compute the average rate of turnout among those in the analytic sample who are assigned to control, by racial/ethnic group. 
+
+```{r control turnout rate by racial-ethnic group}
+mu_white  <- round(d[treat == 0 & !(historyCode2016 %in% exclusion_set) & race3 == "White", mean(outcome)], 4)
+mu_latino <- round(d[treat == 0 & !(historyCode2016 %in% exclusion_set) & race3 == "Latino", mean(outcome)], 4)
+mu_black  <- round(d[treat == 0 & !(historyCode2016 %in% exclusion_set) & race3 == "Black", mean(outcome)], 4)
+```
+
+Subgroup Treatment Effects Among: White, Latino, and Black Voters for Analytic Sample 
+
+```{r treatment models by racial-ethnic group}
+mod_all  <- d[treat %in% 0:4 & !(historyCode2016 %in% exclusion_set), 
+         felm(outcome ~ factor(treat %in% 1:4) + factor(major_party)
+              + age + I(age^2) + registrationYear | congressionalDistrict)]
+mod_white <- d[treat %in% 0:4 & !(historyCode2016 %in% exclusion_set) & race3 == "White",
+        felm(outcome ~ factor(treat %in% 1:4) + factor(major_party)
+             + age + I(age^2) + registrationYear | congressionalDistrict)]
+mod_latino <- d[treat %in% 0:4 & !(historyCode2016 %in% exclusion_set) & race3 == "Latino",
+        felm(outcome ~ factor(treat %in% 1:4) + factor(major_party)
+             + age + I(age^2) + registrationYear | congressionalDistrict)]
+mod_black <- d[treat %in% 0:4 & !(historyCode2016 %in% exclusion_set) & race3 == "Black",
+        felm(outcome ~ factor(treat %in% 1:4) + factor(major_party)
+             + age + I(age^2) + registrationYear | congressionalDistrict)]
+```
+
+Print the results from the racial/ethnic subgroups.
+
+```{r print results of racial-ethnic groups}
+stargazer(
+  mod_white, mod_latino, mod_black,
+  se = list(
+    felm_rses(mod_white), felm_rses(mod_latino), felm_rses(mod_black)), 
+  type = 'text', 
+  digits = 3, 
+  covariate.labels = c(
+    'Any Message',
+    'Republican', 'Independent', 
+    'Age', 'Age2', 
+    'Registration Year'), 
+  apply.coef = function(x) x * 100, 
+  apply.se   = function(x) x * 100, 
+  add.lines = list(
+    c('DV Mean (Percentage)', round(mu_white * 100, 2), 
+      round(mu_latino * 100, 2), round(mu_black * 100, 2))
+  ),
+  title = 'Turnout by Racial/Ethnic Group, Percentage Points',
+  column.labels = c('White', 'Latino', 'Black')
+)
+```
+
+Plot these results, by each group
+
+```{r plot_racial-ethnic_subgroup_effects}
+plot_subgroup(
+  model_all = mod_all,
+  model_white = mod_white, 
+  model_latino = mod_latino, 
+  model_black = mod_black
+)
+```

@@ -1,0 +1,947 @@
+---
+title: "Email Mobilization Messages Suppress Turnout Among Black and Latino Voters: Experimental Evidence From the 2016 General Election: Supplemental Information"
+author: "Michael U. Rivera, D. Alex Hughes, Micah Gell-Redman"
+date: \today
+output:
+  bookdown::pdf_document2: 
+    toc_depth: 3
+    keep_tex: false
+    fontsize: 12pt
+bibliography: "/home/rstudio/analysis/references.bib"
+---
+
+\clearpage
+
+```{r load packages, echo=TRUE, message=FALSE, warning=FALSE}
+library(data.table)
+library(knitr)
+library(stargazer)
+library(lfe)
+library(bookdown)
+```
+
+
+```{r load and clean data, results = 'hide', echo = FALSE, warning = FALSE, messages = FALSE}
+
+source("/home/rstudio/src/functions.R")
+source('/home/rstudio/src/load_and_clean_data.R')
+
+d <- load_and_clean_data(
+  # f = 'https://florida-voters.s3-us-west-1.amazonaws.com/subset_finalAnalysisFile20170711.csv', nrows = Inf
+  f = '/home/rstudio/data/subset_finalAnalysisFile20170711.csv', nrows = Inf
+)
+```
+
+```{r set options}
+conduct_power <- FALSE
+```
+
+# Introduction 
+
+This document supports the the main results reported in "Does email suppress turnout on election day?". The main, published, results have been peer reviewed. The results reported in this supplementary information provide additional context and clarification.
+
+# Data 
+## Data Acquisition
+
+We use two voter extracts provided directly by the Florida Division of Elections. Before election day -- to conduct randomization and assignment of treatment messages -- we use data that is provided in the October 10, 2016 voter roll. This is the final extract that the Division of Elections made available prior to election day. It contained at that time the most up-to-date, official information about who is registered to vote.
+
+After election day -- to calculate treatment effects -- we use the June 14, 2017 voter extract provided by the Florida Division of Elections. Notably, this data is extracted more than seven months after the election. We chose to use an extract this far after the election because earlier voter extracts change as final tallies come in. Voter extract data is comprehensive, so using this later version ensures that all counties had fully reported their data to the state Division of Elections.
+
+## Voting Modes 
+
+Among the people who voted in the 2016 election in Florida, how did they choose to vote? This result is reported in *Section 2, Experimental setting, approach and data*. 
+
+```{r of those who voted; how did they vote?} 
+count_of_voters <- d[!(historyCode2016 == ''), .N]
+
+d[!(historyCode2016 == ''), .(
+  voting_rate = round(.N / count_of_voters, 3)), 
+  keyby = .(historyCode2016)][ , .(
+    historyCode2016 = c(
+      'Absentee', 'Ballot Not Counted', 'Early', 
+      'Provisional Ballot', 'In-person'),
+    'Voting Rate' = voting_rate)]
+```
+
+## Early Voting
+
+Information about whether a voter has cast an early ballot is not published by the state until after the election. As a result it was not possible to exclude these voters from treatment assignment. However, the window for early voting closes the day before we send our treatment, and so, we are able to treat early voting as a pre-treatment covariate, and thus drop these voters from the analysis without risk of bias.
+
+```{r}
+d[
+  treat %in% 0:4 , 
+  .('Early Voting Rate' = mean(historyCode2016 == 'E')), 
+  keyby = .('Assigned to Treatment' = any_message)
+  ]
+```
+
+# Experiment Design 
+## Analytic Sample 
+
+The analytic sample for this manuscript is more restrictive than being just the set of registered voters at the time of the 2016 election. Specifically, this analysis excludes voters who voted early-in-person. These individuals are excluded because their behavior could not possibly have been affected by receiving an email message. 
+
+```{r provide valid email, echo = FALSE}
+email_rate <- d[ , mean(validEmail)]
+```
+
+Approximately `r round(email_rate * 100, 2)` percent of voters provide either a valid email, or an email that could be rationalized by simple regular expression rules. 
+
+How similar are voters who provided an email when compared to those who do not provide an email? As we report in the following table, those who provide an email are just as likely to be democratic, female, and non-white as those who do not provide an email. Voters that provide an email are, on average 4.5 years younger, and also less likely to have voted in the 2012 election than those who do not provide an email. 
+
+```{r create table, echo = FALSE}
+summary_table_1 <- d[ , .(
+    'Two Party Dem. VS' = sum(party=='DEM') / sum(party%in%c('DEM', 'REP')),
+    'SE' = (sum(party=='DEM') / sum(party%in%c('DEM', 'REP'))*(1-sum(party=='DEM') / sum(party%in%c('DEM', 'REP'))))/.N,
+    'Age in 2016' = mean(age, na.rm=TRUE),
+    'SE' = sem(age),
+    'Voted in 2012' = mean(general12, na.rm = TRUE),
+    'SE' = sem(outcome),
+    'Proportion Female' = mean(gender=='F', na.rm=TRUE),
+    'SE' = sem(gender=='F'),
+    'Proportion non-White' = mean(minority, na.rm=TRUE),
+    'SE'  = sem(minority),
+    'N' = .N)]
+summary_table_1 <- t(summary_table_1)
+
+summary_table_2 <- d[
+  validEmail == TRUE, .(
+    'Two Party Dem. VS' = sum(party=='DEM') / sum(party%in%c('DEM', 'REP')),
+    'SE' = (sum(party=='DEM') / sum(party%in%c('DEM', 'REP'))*(1-sum(party=='DEM') / sum(party%in%c('DEM', 'REP'))))/.N,
+    'Age in 2016' = mean(age, na.rm=TRUE),
+    'SE' = sem(age),
+    'Voted in 2012' = mean(general12, na.rm = TRUE),
+    'SE' = sem(outcome),
+    'Proportion Female' = mean(gender=='F', na.rm=TRUE),
+    'SE' = sem(gender=='F'),
+    'Proportion non-White' = mean(minority, na.rm=TRUE),
+    'SE'  = sem(minority),
+    'N' = .N)]
+
+summary_table_2 <- t(summary_table_2)
+
+summary_table_3 <-  d[treat %in% 0:4 , .(
+    'Two Party Dem. VS' = sum(party=='DEM') / sum(party%in%c('DEM', 'REP')),
+    'SE' = (sum(party=='DEM') / sum(party%in%c('DEM', 'REP'))*(1-sum(party=='DEM') / sum(party%in%c('DEM', 'REP'))))/.N,
+    'Age in 2016' = mean(age, na.rm=TRUE),
+    'SE' = sem(age),
+    'Voted in 2012' = mean(general12, na.rm = TRUE),
+    'SE' = sem(outcome),
+    'Proportion Female' = mean(gender=='F', na.rm=TRUE),
+    'SE' = sem(gender=='F'),
+    'Proportion non-White' = mean(minority, na.rm=TRUE),
+    'SE'  = sem(minority),
+    'N' = .N)]
+summary_table_3 <- t(summary_table_3)
+
+summary_table_4 <-  d[
+  treat %in% 0:4 & !(historyCode2016 == 'E'), 
+  .('Two Party Dem. VS' = sum(party=='DEM') / sum(party%in%c('DEM', 'REP')),
+    'SE' = (sum(party=='DEM') / sum(party%in%c('DEM', 'REP'))*(1-sum(party=='DEM') / sum(party%in%c('DEM', 'REP'))))/.N,
+    'Age in 2016' = mean(age, na.rm=TRUE),
+    'SE' = sem(age),
+    'Voted in 2012' = mean(general12, na.rm = TRUE),
+    'SE' = sem(outcome),
+    'Proportion Female' = mean(gender=='F', na.rm=TRUE),
+    'SE' = sem(gender=='F'),
+    'Proportion non-White' = mean(minority, na.rm=TRUE),
+    'SE'  = sem(minority),
+    'N' = .N)]
+summary_table_4 <- t(summary_table_4)
+
+summary_table <- cbind(
+  summary_table_1,
+  summary_table_2, 
+  summary_table_3, 
+  summary_table_4
+)
+
+rownames(summary_table) <- c(
+  'Two_Party_Dem_VS', 'SE', 
+  'Age_in_2016', 'SE', 
+  'Voted_in_2012', 'SE', 
+  'Proportion_Female', 'SE', 
+  'Proportion_Non-White', 'SE',
+  'Number_of_Observations'
+)
+
+colnames(summary_table) <- c(
+  'All Data', 'Valid Email', 
+  'Assigned Treatment', 'Analytic Sample'
+  )
+```
+
+```{r print summary table, results='asis', echo = FALSE}
+stargazer(
+  summary_table, 
+  type = 'latex', 
+  summary = FALSE, header = FALSE, 
+  title = 'Analytic Sample'
+)
+```
+
+## Randomization 
+
+We block random assign voters who provide a valid email within levels of the following  blocking variables: congressional district and self-reported race. 
+
+We reproduce the randomization code here. We do not execute it, to maintain a single randomization. Randomization is conducted within blocks defined by Congressional District and racial identification categories. 
+
+```
+## for individuals with a unique houseID; this is a simple statement
+## make a draw from 0 (pure control) to 4 (treamtent 3).
+##   - note that this is blocked on _individual_ characteristics
+##     which we're able to do because we don't have any super-individual
+##     problems with the data.
+d[houseID <= 999999, treat := sample(0:4, size = .N, replace = TRUE),
+  by = .(congressionalDistrict, raceCategory)
+  ] 
+```
+
+If there is more than one person living at a house, then we cluster randomize each person at that household into the same condition, using their Congressional District as a blocking factor. 
+
+```
+## for individuals with a shared houseID we take a single treatment
+## assignment draw and give it to everyone at the same house.
+##   - note that this is blocked on congressionalDistrict, but that we
+##     can't do any better that this beacuse we now have super-individual
+##     information that is encoded in the clusters. 
+d[houseID > 999999, treat := rep(sample(0:4, size = 1), each = .N),
+  by = .(congressionalDistrict)
+  ]
+```
+
+## Randomization Check
+
+Distributions of covariates across treatment conditions do not raise any concerns that randomization did not proceed as planned. The following table reports a covariate balance table. 
+
+```{r covariate balance check, echo = FALSE}
+covariate_balance_table <-  d[
+  !(historyCode2016 %in% 'E') & treat %in% 0:4 , .(
+    'Two Party Vote Share' = sum(party=='DEM') / sum(party%in%c('DEM', 'REP')),
+    'SE' = (sum(party=='DEM') / sum(party%in%c('DEM', 'REP'))*(1-sum(party=='DEM') / sum(party%in%c('DEM', 'REP'))))/.N,
+    'Age in 2016' = mean(age, na.rm=TRUE),
+    'SE' = sem(age),
+    'Voted in 2012' = mean(general12, na.rm = TRUE),
+    'SE' = sem(outcome),
+    'Proportion Female' = mean(gender=='F', na.rm=TRUE),
+    'SE' = sem(gender=='F'),
+    'Proportion Non-White' = mean(minority, na.rm=TRUE),
+    'SE'  = sem(minority),
+    'Number of Observations' = .N), 
+  keyby = .('Treatment Assignment' = any_message)]
+covariate_balance_table <- t(covariate_balance_table)
+covariate_balance_table <- covariate_balance_table[-1, ]
+
+rownames(covariate_balance_table) <- c(
+  'Two_Party_Dem_VS', 'SE', 
+  'Age_in_2016', 'SE', 
+  'Voted_in_2012', 'SE', 
+  'Proportion_Female', 'SE', 
+  'Proportion_Non-White', 'SE',
+  'Number_of_Observations'
+)
+colnames(covariate_balance_table) <- c('Control', 'Any Email')
+```
+
+```{r randomization table, echo = FALSE, results = 'asis'}
+stargazer(
+  covariate_balance_table, 
+  title = 'Randomization Check', 
+  header = FALSE,
+  digits = 2, 
+  summary = FALSE)
+```
+
+
+```{r echo = FALSE}
+anova_data <- na.omit(
+  d, cols = c('treat', 'general12', 'gender', 'race', 
+              'major_party'))
+
+randomization_model_short <- anova_data[ 
+  !(historyCode2016 == 'E') & treat %in% 0:4, 
+  lm(any_message ~ 1)
+  ]
+randomization_model_long <- anova_data[
+  !(historyCode2016 == 'E') & treat %in% 0:4, 
+  lm(any_message ~ 1 + general12 + gender + race + major_party)
+  ]
+
+randomization_anova <- anova(
+  randomization_model_short, 
+  randomization_model_long, 
+  test = 'F'
+  )
+```
+
+Green and Gerber (2012) suggest examining whether assignment to treatment can be predicted by any on-hand covariates. Here too, there is no evidence to support a hypothesis that the randomization did not proceed as planned. We estimate two models: 
+
+\begin{align}
+any\_message &= \beta_{0} + \epsilon \\ 
+any\_message &= \beta_{0} + \beta_{1}voted\_2012 + \beta_{2}gender + \beta_{3}race + \beta_{4}party + \epsilon
+\end{align} 
+
+The F-test p-value for a comparison of these model  is `r round(randomization_anova$'Pr(>F)'[2], 2)`. That is, the probability of observing these data under the null hypothesis that randomization was not problematic, is `r round(randomization_anova$'Pr(>F)'[2], 2)`. This is insufficient to reject the null hypothesis. 
+
+## Email Distribution Details 
+
+All treatment emails were distributed from a Qualtrics email management service, through University of Texas at Austin servers. The nature of our delivery does not permit us to observe whether emails were actually received by voters, nor whether they were opened. However, the randomization of treatment ensures that, in expectation, rates of opening are balanced across conditions. The technical staff at the University were able to confirm that the batch of emails was handled by their servers, and that the University email servers did not have their white-list status changed as a consequence of this mailing.
+
+Although the limitations of the delivery infrastructure lead our estimates to be less precise than what may have been possible under a placebo-controlled design (@gerber2012), they remain unbiased estimates of the change in voting that a campaign or other actor might expect to cause through a single, direct-email campaign.
+
+## Power Analysis
+\label{sec:power}
+
+### Power: All Voters, Any Message vs. Control 
+
+In this section, we report *ex post* power analysis information drawn from the analysis reported in the main text of the paper. In our preferred model specification, our experimental messaging caused a control vs. any treatment difference in turnout rates of 0.5 percentage points. We use this treatment effect estimate together with the number of registered voters in each condition to compute a simulated value for the achieved power in this test.\footnote{Code to support this is included in the repository for this project.} As we report in Figure 1, we find that, when comparing the 400,000 registered voters who received any form of message against the 100,000 registered voters who did not receive any contact this test is adequately powered.
+
+```{r any message power analysis, echo = FALSE}
+if(conduct_power == TRUE) { 
+  effect_size <- seq(from = 0, to = .01, length.out = 11)
+
+  ## Check all conditions vs. control
+  power <- rep(NA, length(effect_size))
+
+  for(eff in 1:length(effect_size)) {
+      cat(sprintf('Effect size: %.3f\n', eff))
+      power[eff] <- check_power(
+        1000, 0.86092, 0.86092 + effect_size[eff], 100000, 400000)}
+
+  plot_power(
+      power = power,
+      effect_size = effect_size,
+      treat_size = 0.005,
+      main = 'Any Message vs. Achieved Power',
+      file = 'power_plot.pdf'
+  )
+}
+```
+
+### Power: All Voters, Message vs. Message
+
+```{r message-vs-message power analysis, echo = FALSE}
+if(conduct_power == TRUE) { 
+  effect_size <- seq(from = 0, to = 0.01, length.out = 22)
+  power_by_condition <- rep(NA, length(effect_size))
+
+  for(eff in 1:length(effect_size)) {
+      cat(sprintf('Effect size: %.3f \n', effect_size[eff]))
+      power_by_condition[eff] <- check_power(
+          1000, 0.86092, 0.86092 + effect_size[eff], 100000, 100000
+      )
+  }
+
+  plot_power(
+      power = power_by_condition,
+      effect_size = effect_size,
+      treat_size = 0.002,
+      main = 'Message vs. Message Achieved Power',
+      file = 'power_plot_by_condition.pdf'
+  )
+} 
+```
+
+In the next plot we report the power achieved when comparing any one condition against any other condition. More specifically, each comparison is of any treatment group (100,000 voters per message) against any other treatment or control group (also, 100,000 voters per message).
+
+\begin{figure}[p]
+  \begin{center}
+  \includegraphics[width=0.45\linewidth]{/home/rstudio/tables-figures/power_plot.pdf}
+  \includegraphics[width=0.45\linewidth]{/home/rstudio/tables-figures/power_plot_by_condition.pdf}
+  \caption{\textbf{Left Plot: Any Message vs. Control}. Plotted is the power curve for a scenario comparing the  400,000 voters in any treatment group (100,000 per message) against the 100,000 voters in the control group. The vertical line is drawn at the achieved treatment effect reported in the main body of the text. The dashed vertical line is drawn at the minimum detectable effect given this sample and design. The solid vertical line is drawn at the achieved treatment effect reported in the main body of the text. \label{fig:total_power} \textbf{Right Plot: Message vs. Message}. Plotted is the power curve for a scenario comparing  100,000 voters in any one message group against 100,000 from another message group. The vertical line is drawn at the largest difference in message effects observed in this analysis. Even the largest effect is under-powered.\label{fig:power_by_message}}
+  \end{center}
+\end{figure}
+
+
+
+### Power: Racial/Ethnic Groups, Any Message vs. Control
+
+In this section we estimate the power that is achieved in this design for groups of voters that share a self-reported ethnic identity. Specifically, we report the power comparing the number of voters assigned to receive any message against similar voters assigned to receive control. 
+
+- Among white voters, there are approximately 40,000 voters that are assigned to control and 160,000 assigned to treatment. 
+- Among Latino voters, there are approximately 12,500 voters that are assigned to control and 50,000 assigned to treatment. 
+- Among black voters, there are approximately 7,300 voters that are assigned to control and 30,000 assigned to treatment. 
+
+```{r power-among-white-voters, echo = FALSE}
+if(conduct_power == TRUE) { 
+  effect_size <- seq(from=0, to = 0.025, length.out = 33)
+  power_by_group_white <- rep(NA, length(effect_size))
+  
+  for(eff in 1:length(effect_size)) { 
+    cat(sprintf('Effect size: %.3f \n', effect_size[eff]))
+    power_by_group_white[eff] <- check_power(
+      1000, 0.83996, 0.83996 + effect_size[eff], 41223, 162831
+      )
+  }
+  
+    plot_power(
+      power = power_by_group_white,
+      effect_size = effect_size,
+      treat_size = 0.003,
+      main = 'Any Message Power: White Voters',
+      file = 'power_plot_by_group_white.pdf'
+  )
+}
+```
+
+```{r power-among-latino-voters, echo = FALSE}
+if(conduct_power == TRUE) { 
+  effect_size <- seq(from=0, to = 0.025, length.out = 33)
+  power_by_group_latino <- rep(NA, length(effect_size))
+  
+  for(eff in 1:length(effect_size)) { 
+    cat(sprintf('Effect size: %.3f \n', effect_size[eff]))
+    power_by_group_latino[eff] <- check_power(
+      1000, 0.7392577, 0.7392577 + effect_size[eff], 12637, 50767
+      )
+  }
+  
+    plot_power(
+      power = power_by_group_latino,
+      effect_size = effect_size,
+      treat_size = 0.0097,
+      main = 'Any Message Power: Latino Voters',
+      file = 'power_plot_by_group_latino.pdf'
+  )
+}
+```
+
+```{r power-among-black-voters, echo = FALSE}
+if(conduct_power == TRUE) { 
+  effect_size <- seq(from=0, to = 0.025, length.out = 33)
+  power_by_group_black <- rep(NA, length(effect_size))
+  
+  for(eff in 1:length(effect_size)) { 
+    cat(sprintf('Effect size: %.3f \n', effect_size[eff]))
+    power_by_group_black[eff] <- check_power(
+      1000, .6404403, .6404403 + effect_size[eff], 7359, 29159
+      )
+  }
+  
+    plot_power(
+      power = power_by_group_black,
+      effect_size = effect_size,
+      treat_size = 0.0216,
+      main = 'Any Message Power: Black Voters',
+      file = 'power_plot_by_group_black.pdf'
+  )
+}
+```
+
+\begin{figure}[p]
+  \begin{center}
+  \includegraphics[width=0.3\linewidth]{/home/rstudio/tables-figures/power_plot_by_group_white.pdf}
+  \includegraphics[width=0.3\linewidth]{/home/rstudio/tables-figures/power_plot_by_group_latino.pdf}
+  \includegraphics[width=0.3\linewidth]{/home/rstudio/tables-figures/power_plot_by_group_black.pdf}  
+  \caption{\textbf{Any message vs. Control, by racial/ethnic group}. Plotted is the power achieved comparing voters within a racial/ethnic group who received any message against voters from the same group who were assigned to the control group. The vertical line is drawn at the largest difference in message effects observed in this analysis. The dashed vertical line is drawn at the minimum detectable effect given this sample and design. The solid vertical line is drawn at the achieved treatment effect reported in the main body of the text. \label{fig:power_by_message}}
+  \end{center}
+\end{figure}
+
+### Power: Racial/Ethnic Groups, Message vs. Message 
+
+In this section we estimate the power that is achieved in this design for groups of voters that share a self-reported ethnic identity. Distinct from the last section, here, we report the power achieved in a comparison between voters assigned to receive one message against another message. Whereas in the last section there were 4-times the number of people in the any message condition than control, in this section they are balanced.
+
+- Among white voters, there are approximately 40,000 voters assigned to each condition
+- Among Latino voters, there are approximately 12,500 voters that are assigned to each condition
+- Among black voters, there are approximately 7,300 voters that are assigned to control and 7,300 assigned to treatment. 
+
+As is clear from this power analysis, there are very few people in each message-by-racial-group comparison cell. As a result, for any comparison that is this detailed to be adequately powered, the message-vs-message difference in voting would need to be **very** large. Plainly stated, this design is poorly powered to detect differences in response to messages, within racial/ethnic subgroups. Later in this SI, we report the estimates for these differences. We do so because we pre-registered these effects, but we would encourage readers to interpret any differences in behavior with a clear view for the limitations.  
+
+```{r echo = FALSE} 
+if(conduct_power == TRUE) { 
+  effect_size <- seq(from = 0, to = 0.03, length.out = 22)
+
+    power_by_group_white_by_message  <- rep(NA, length(effect_size))
+    power_by_group_latino_by_message <- rep(NA, length(effect_size))
+    power_by_group_black_by_message  <- rep(NA, length(effect_size))
+    
+    for(eff in 1:length(effect_size)) {
+      cat(sprintf('Effect size: %.3f \n', effect_size[eff]))
+      power_by_group_white_by_message[eff] <- check_power(
+          1000, 0.84, 0.84 + effect_size[eff], 40000, 40000
+      )
+  }
+  for(eff in 1:length(effect_size)) {
+      cat(sprintf('Effect size: %.3f \n', effect_size[eff]))
+    power_by_group_latino_by_message[eff] <- check_power(
+          1000, 0.73, 0.73 + effect_size[eff], 12500, 12500
+      )
+  }
+  for(eff in 1:length(effect_size)) {
+      cat(sprintf('Effect size: %.3f \n', effect_size[eff]))
+    power_by_group_black_by_message[eff] <- check_power(
+          1000, 0.63, 0.63 + effect_size[eff], 7300, 7300
+      )
+  }
+  
+  plot_power(
+      power = power_by_group_white_by_message,
+      effect_size = effect_size,
+      treat_size = 0.000,
+      main = 'White Voters: Message vs. Message Achieved Power',
+      file = 'power_plot_by_group_white_by_condition.pdf'
+  )
+  plot_power(
+      power = power_by_group_latino_by_message,
+      effect_size = effect_size,
+      treat_size = 0.000,
+      main = 'Latino Voters: Message vs. Message Achieved Power',
+      file = 'power_plot_by_group_latino_by_condition.pdf'
+  )
+  plot_power(
+      power = power_by_group_black_by_message,
+      effect_size = effect_size,
+      treat_size = 0.000,
+      main = 'Black Voters: Message vs. Message Achieved Power',
+      file = 'power_plot_by_group_black_by_condition.pdf'
+  )
+} 
+```
+
+\begin{figure}[p]
+  \begin{center}
+  \includegraphics[width=0.3\linewidth]{/home/rstudio/tables-figures/power_plot_by_group_white_by_condition.pdf}
+  \includegraphics[width=0.3\linewidth]{/home/rstudio/tables-figures/power_plot_by_group_latino_by_condition.pdf}
+  \includegraphics[width=0.3\linewidth]{/home/rstudio/tables-figures/power_plot_by_group_black_by_condition.pdf}  
+  \caption{\textbf{Messages vs. Message, by racial/ethnic group}. Plotted is the power achieved comparing voters within a racial/ethnic group who were assigned to receive a particular message against voters in that same group, who were assigned to receive a different specific message. The dashed vertical line is drawn at the minimum detectable effect given this sample and design. The solid vertical line is drawn at the achieved treatment effect reported in the main body of the text.}
+  \end{center}
+\end{figure}
+
+## Contact Language Details
+
+The experimental treatment consisted of the text at the end of the first paragraph of the email (see Table 3). For clarity, 20% of the analytic sample did not receive any email; 20% of the analytic sample received the *Baseline* message, and 20% of the sample received each of the three descriptive social norm messages.
+
+Figure 4 shows the general form of the email, while Figure 5 reproduces an example of one of the treatments as it would have appeared to subjects. All emails were unformatted text, contained no images or hyperlinks, and contained the same emailed header and signature information.
+
+\input{/home/rstudio/tables-figures/stimulus.tex}
+\input{/home/rstudio/tables-figures/treatment_table.tex}
+
+\begin{figure}[h]
+  \begin{center}
+  \includegraphics[width=\linewidth]{/home/rstudio/tables-figures/cue1}
+  \caption{In other treatment conditions, the phrase \textit{Democracy depends on
+    citizens like you--so please vote!} is replaced with the text in Table 3.
+  \label{x:treatimage}}
+  \end{center}
+\end{figure}
+
+# Results 
+## Main Effects 
+### Difference in Means: Main Effects of Treatment
+
+Here, we first report the difference in means calculated between the groups that were assigned to receive any email message against those who were assigned to the control group. This comparison, otherwise unconditioned by additional covariates provides a straightforward, unbiased estimate of the causal effect of receiving an email message. 
+
+Throughout all estimated models, note that estimates for effects and standard errors have all been scaled by a factor of 100, and can be directly interpreted as percentage points. 
+
+```{r}
+effect_table <- d[ 
+  treat %in% 0:4 & !(historyCode2016 == 'E'),
+  .(mean_vote = mean(outcome),
+    sem_vote  = sem(outcome), 
+    variance = var(outcome),
+    observations = .N),
+  keyby = .(any_message)]
+```
+
+```{r}
+effect_table
+```
+
+This simple difference in means produces an estimate of the treatment effect of `r round(100 * (effect_table[ , mean_vote[2] - mean_vote[1]]), 3)` and an estimate of the standard error of this difference of `r round(100 * (sqrt( sum( effect_table[any_message==FALSE, variance / observations], effect_table[any_message==TRUE, variance / observations] ) )), 5)`. 
+
+### Estimation Details For Main Model
+\label{x:est-details}
+
+
+We use regression with robust standard errors to estimate the causal effects of email contact @wooldridge2010econometric, @gerber2012. To measure the effects of any form of contact, we estimate the following regression:
+
+\begin{equation}
+  \label{model1} 
+  Y_{i} = \alpha + \bar{\tau} Treat_{i} + \gamma X_{i} + \phi District_{i} + \epsilon_{i},
+\end{equation}
+
+\noindent where $Treat_{i}$ is an indicator that the subject received any form of treatment, and $\bar{\tau}$ is the average difference in the propensity to turnout for a registered voter assigned to any of the four treatment groups compared to those in the control group. *This quantity,* $\bar{\tau}$ *is the primary causal quantity of interest in this analysis.* $X$ is a vector of controls to improve the efficiency of the estimates, $District$ is a vector of congressional districts and $\epsilon$ captures idiosyncratic errors at the individual level.
+
+```{r estimate main effects of treatment models}
+model_1 <- d[treat %in% 0:4 & !(historyCode2016 == 'E'), 
+               lm(outcome ~ any_message)]
+model_2 <- d[treat %in% 0:4 & !(historyCode2016 == 'E'), 
+             felm(outcome ~ any_message | congressionalDistrict)]
+model_3 <- d[treat %in% 0:4 & !(historyCode2016 == 'E'), 
+             felm(outcome ~ any_message + factor(major_party) + race3 + 
+                    age + I(age^2) | congressionalDistrict)]
+```
+
+### Results for Main Model
+
+```{r print main effects of treatment models, echo = FALSE, results = 'asis'}
+stargazer(
+  model_1, model_2, model_3, 
+  title = 'Main Model of Effects', 
+  label = 'tab:top-line', 
+  header = FALSE, 
+  covariate.labels = c(
+    'Assigned Message', 
+    'Republican', 'Independent', 
+    'Black', 'Latino', 'Other', 
+    'Age', 'Age$^2$', 'Intercept'), 
+  notes = 'Democrats and Whites are baseline values.',
+  add.lines = list(
+    c('District FE', 'No', 'Yes', 'Yes')
+  ), 
+  omit.stat = 'ser'
+  )
+```
+
+## Message Effects 
+### Estimation Details for Message Effects 
+
+In our pre-analysis plan, we proposed to test for whether different messages would have distinct effects on voter turnout. We do not report estimates of these effects in the main body because such estimates are under-powered and we urge considerable care in interpreting these results. For completeness, we include these results here. These models are similar to those in the first estimated model, but in the following equation, we estimate a separate indicator for each message type sent.
+
+\begin{align*}
+  \label{model2}
+  Y_{i} = \alpha &+ \tau_{1} Baseline_{i} \\
+        &+ \tau_{2} Descriptive Social Norm_{i} \\ 
+        &+ \tau_{3} Ethnic Descriptive Social Norm 1_{i} \\ 
+        &+ \tau_{4} Ethnic Descriptive Social Norm 2_{i} \\ 
+        &+ \gamma X_{i} + \phi District_{i} + \epsilon_{i}
+\end{align*}
+
+\noindent where $\tau_{1}, \tau_{2}, \tau_{3},$ and $\tau_{4}$ are the average difference in the propensity to turnout between a registered voter in control condition (reference category) compared to the \textit{Baseline}, \textit{Descriptive Social Norm}, \textit{Ethnic Descriptive Social Norm 1}, and \textit{Ethnic Descriptive Social Norm 2}, respectively.
+
+As reported in Table 5 and shown in Figure 6, there is little evidence to support a hypothesis that message content causes differential turnout in voters. 
+
+### Results for Message Effects
+
+```{r estimate message effects, echo = TRUE }
+model_4 <- d[treat %in% 0:4 & !(historyCode2016 == 'E'), 
+             lm(outcome ~ any_message)]
+model_5 <- d[treat %in% 0:4 & !(historyCode2016 == 'E'), 
+               lm(outcome ~ factor(treat))]
+model_6 <- d[treat %in% 0:4 & !(historyCode2016 == 'E'), 
+             felm(outcome ~ factor(treat) | congressionalDistrict)]
+model_7 <- d[treat %in% 0:4 & !(historyCode2016 == 'E'), 
+             felm(outcome ~ factor(treat) + factor(major_party) + 
+                    race3 + age + I(age^2) | congressionalDistrict)]
+
+message_anova <- anova(model_4, model_5, test = 'F')
+```
+
+Indeed, an F-test for whether individual coefficients for each message improve the fit of the model above a single $\bar{\tau}$ returns a p-value of `r round(message_anova$"Pr(>F)"[2], 2)`. 
+
+```{r print message effects, results='asis', echo = FALSE}
+stargazer(
+  model_4, model_5, model_6, model_7, 
+  type = 'latex', 
+  covariate.labels = c(
+    'Any Message', 
+    'Baseline', 
+    'Descriptive Social Norm', 
+    'Ethnic Descriptive Social Norm 1', 
+    'Ethnic Descriptive Social Norm 2',
+    'Republican', 'Independent', 
+    'Black', 'Latino', 'Other', 
+    'Age', 'Age$^2$', 'Intercept'), 
+  omit.stat = c('ser', 'F'), 
+  notes = 'Democrats and Whites are baseline values.',
+  add.lines = list(
+    c('District FE', 'No', 'No', 'Yes', 'Yes')
+  ), 
+  title = 'Message Effects', 
+  label = 'tab:message_effects',
+  header = FALSE
+)
+```
+
+\begin{figure}[p]
+  \begin{center}
+    \includegraphics[width=.9\linewidth]{/home/rstudio/tables-figures/message_effects}
+    \caption{Message Effects\label{fig:message-effects}}
+  \end{center}
+\end{figure} 
+
+## Subgroups
+### Estimation Details for Subgroups
+
+In Table 12 we report results from models that estimate the effect of each stimulus among voters who are able to vote on election day, broken out by whether that voter has chosen to identify as White, Black, or Latino in their voter registration. These results are also plotted in Figure 8.
+
+### Results for Subgroups
+```{r estimate subgroup effects, echo = TRUE}
+model_7 <- d[
+  treat %in% 0:4 & !(historyCode2016 == 'E') & race3 == "White",
+  felm(outcome ~ any_message + factor(major_party) 
+         + age + I(age^2)  | congressionalDistrict)]
+model_8 <- d[
+  treat %in% 0:4 & !(historyCode2016 == 'E') & race3 == "Latino",
+  felm(outcome ~ any_message + factor(major_party)
+       + age + I(age^2) | congressionalDistrict)]
+model_9 <- d[
+  treat %in% 0:4 & !(historyCode2016 == 'E') & race3 == "Black",
+  felm(outcome ~ any_message + factor(major_party)
+       + age + I(age^2) | congressionalDistrict)]
+```
+
+```{r print subgroup effects, echo = FALSE, results = 'asis'}
+stargazer(
+  model_7, model_8, model_9, 
+  type = 'latex', 
+  column.labels = c(
+    'White RV', 'Latino RV', 'Black RV'
+  ),
+  covariate.labels = c(
+    'Any Message', 'Republican', 'Independent', 'Age', 'Age$^2$'
+  ),
+  header = FALSE,
+  label = 'tab:subgroup', 
+  title = 'Message Effect, by Racial/Ethnic Subgroup'
+)
+```
+
+```{r plot subgroup effects, echo = FALSE, results = FALSE} 
+plot_subgroup(
+  model_7, model_8, model_9, model_2,
+  make_pdf = TRUE, file = 'subgroup_effects.pdf'
+  )
+```
+
+\begin{figure}[p]
+\begin{center}
+\includegraphics[width=.9\linewidth]{/home/rstudio/tables-figures/subgroup_effects}
+\caption{Subgroup Effects. All messages are combined and models are estimated on subgroups of voters. These points correspond to $\bar{\tau}_{w}, ,\bar{\tau}_{b},$ and $\bar{\tau}_{l}$ reported in the main body. \label{fig:subgroup-effects}}
+\end{center}
+\end{figure} 
+
+
+## Subgroup Treatment Heterogeneity 
+
+Throughout the manuscript, we principally report the subgroup treatment effects. Here, for completeness, we report a model that estimates whether voters in minority racial/ethnic groups are affected by treatment differently than white voters. 
+
+```{r}
+model_hte <- d[
+  treat %in% 0:4 & !(historyCode2016 == 'E'),
+  felm(outcome ~ any_message * race3 + factor(major_party) 
+         + age + I(age^2)  | congressionalDistrict)]
+```
+
+```{r, echo = FALSE, results = 'asis'}
+stargazer(
+  model_hte, 
+  type = 'latex', 
+  covariate.labels = c(
+    'Any Message', 'Black Voter', 'Latino Voter', 'Other Voter', 
+    'Republican', 'Independent', 'Age', 'Age$^2$', 
+    'Any Message * Black Voter', 
+    'Any Message * Latino Voter', 
+    'Any Message * Other Voter'),
+  header = FALSE, 
+  label = 'tab:hte', 
+  title = 'Heterogeneous Effects of Treatment by Racial/Ethnic Group'
+  )
+```
+
+
+
+## Message by Subgroup Effects
+
+There is rich scholarship that examines how white (@alvarez2004revolution, @hajnal2014immigration, @jardina2019), Latino (@bedolla2005, @bedolla2012), and black  (@mcgowen2010, @philpot2009winning) identities shape that way voters engage in politics. 
+
+### Turnout and Observations Message-By-Group
+
+Despite the relatively large sample size available in this experiment, we are extremely limited in what we are able to conclude due to limitations of statistical power. Even with an analytic sample containing more than 260,000 individuals, to answer the question about how four messages might differently affect three identity groups leaves approximately only 20,000 voters in each comparison. Given experimental cells of this size, using standard criteria (e.g. $\alpha = 0.05$, $\beta = 0.8$) it would only be possible to reliably measure effects that are larger than 1.2 percentage points. This effect size is more than twice the well-established direct-mail effect @green2019get. 
+
+```{r, echo=FALSE}
+treatment_labels <- data.table(
+  treat = 0:4, 
+  treat_label = c(
+    'Control', 'Baseline', 
+    'General Descriptive Norm', 'Ethnic Descriptive Norm 1', 
+    'Ethnic Descriptive Norm 2')
+  )
+
+d_subgroup <- d[ treat %in% 0:4 & !(historyCode2016 == 'E'), .(outcome, treat, race3)]
+setkeyv(d_subgroup, cols = 'treat')
+
+d_subgroup <- merge(d_subgroup, treatment_labels, by = 'treat')
+setkeyv(d_subgroup, cols = c('treat', 'race3'))
+
+voters_by_race <- d_subgroup[
+  treat %in% 0:4 & race3 %in% c('White', 'Latino', 'Black'), .(
+    Voters = .N, 
+    Turnout = mean(outcome)),  
+    keyby = .('Race' = race3)]
+
+subgroup_white <- d_subgroup[treat %in% 0:4 & race3 == 'White', .(
+  'White Voters' = .N, 
+  'White Turnout'= mean(outcome)), 
+   keyby = .('Message Label' = treat_label)]
+subgroup_latino <- d_subgroup[treat %in% 0:4 & race3 == 'Latino', .(
+  'Latino Voters'  = .N, 
+  'Latino Turnout' = mean(outcome)), 
+  keyby = .('Message Label' = treat_label)]
+subgroup_black <- d_subgroup[treat %in% 0:4 & race3 == 'Black', .(
+  'Black Voters' = .N, 
+  'Black Turnout' = mean(outcome)
+  ), 
+  keyby = .('Message Label' = treat_label)]
+```
+
+```{r, results='asis', echo = FALSE}
+stargazer(
+  voters_by_race, 
+  type = 'latex', title = 'Voting Rate and Observations, By Group',
+  summary = FALSE, 
+  header = FALSE
+)
+stargazer(
+  subgroup_white,
+  type = 'latex', title = 'Voting Rate and Observations Among White Voters',
+  summary = FALSE, header = FALSE
+)
+stargazer(
+  subgroup_latino,
+  type = 'latex', title = 'Voting Rate and Observations Among Latino Voters',
+  summary = FALSE, header = FALSE
+)
+stargazer(
+  subgroup_black,
+  type = 'latex', title = 'Voting Rate and Observations Among Black Voters',
+  summary = FALSE, header = FALSE
+)
+```
+
+Nevertheless, for completeness, we report estimates of these models here in the appendix, but we urge due caution in interpreting these effects, as their under-powered nature makes quite possible that any measured *message-by-group* difference make be a false-positive result. 
+
+### Results for Message by Subgroup Effects 
+
+```{r estimate message-by-subgroup, echo = TRUE}
+model_10 <- d[
+  treat %in% 0:4 & !(historyCode2016 == 'E') & race3 == "White",
+  felm(outcome ~ factor(treat) + factor(major_party) 
+         + age + I(age^2)  | congressionalDistrict)]
+model_11 <- d[
+  treat %in% 0:4 & !(historyCode2016 == 'E') & race3 == "Latino",
+  felm(outcome ~ factor(treat) + factor(major_party)
+       + age + I(age^2)| congressionalDistrict)]
+model_12 <- d[
+  treat %in% 0:4 & !(historyCode2016 == 'E') & race3 == "Black",
+  felm(outcome ~ factor(treat) + factor(major_party)
+       + age + I(age^2) | congressionalDistrict)]
+```
+
+```{r report message-by-subgroup, echo = FALSE, results = 'asis'}
+stargazer(
+  model_10, model_11, model_12, 
+  type = 'latex', 
+  omit.stat = 'ser',
+  column.labels = c('White', 'Latino', 'Black'), 
+  covariate.labels = c(
+    'Baseline', 
+    'Descriptive Norm', 
+    'Ethnic Descriptive Social Norm 1', 
+    'Ethnic Descriptive Social Norm 2', 
+    'Age', 'Age$^2$'), 
+  header = FALSE, 
+  title = 'Message Effects, By Racial/Ethnic Subgroup'
+)
+```
+
+We plot these results for ease of interpretation in Figure 7. 
+
+```{r plot message-by-subgroup, echo = FALSE, results = FALSE}
+plot_message_by_subgroup(
+  model_10, model_11, model_12, 
+  make_pdf = TRUE, file = 'message-by-subgroup.pdf')
+```
+
+\begin{figure}[p]
+\begin{center}
+\includegraphics[width=0.9\linewidth]{/home/rstudio/tables-figures/message-by-subgroup}
+\caption{Message by Subgroup effects\label{fig:message-by-subgroup}}.
+\end{center}
+\end{figure} 
+
+## Results Are Robust to Exclusion of Early and All Vote-By-Mail Voters
+
+In the main analysis that we report, we exclude all voters who voted early. It is possible -- however very unlikely -- that voters could have voted by mail *after* having received our email messages. In our investigation, we found that there are some postal areas where a ballot mailed by a registered voter *could have* been placed into a USPS blue box for pickup on the afternoon that we sent our email message, and been received by the officials on time. We believe that perhaps 10% of registered voters reside in areas where this is possible, but we must acknowledge that this is an imprecise estimate. 
+
+Here, we examine whether estimates change as a result of modifying the set of voters who are *included* or *excluded*. In particular, in this set of models we newly exclude all individuals who voted-by-mail. This is because it is not possible for us to ascertain the time that a ballot was mailed. 
+
+The analysis that is reported in the main body of the paper is *extremely causally conservative*. We include the 29% of voters who were very unlikely to have their behavior altered by our messages (because they are very likely to have already mailed in their ballot) in our sample. As a result, what we report in the main body is a causally sound, but lower-bound on the treatment effect that is possible for these messages. 
+
+In this section, we replicate the same results as reported in the main tables above, but in this instance we exclude those individuals who voted by mail. We encourage caution in interpreting these results, because it is possible (though probably unlikely) that these estimates contain post-treatment bias.
+
+We summarise the results of this robustness check as follows:
+
+- In all cases the direction of the effect is the same
+- The magnitude of estimated effects are slightly larger in these models that do not include vote-by-mail voters
+- There is less precision in these estimates, due to the reduction of sample size
+
+Overall, we belive a fair interpretation is that we learn similar things under both schemes: messages reduce turnout among black and Latino, but not white voters. 
+
+```{r models that exclude vote-by-mail voters}
+model_no_absentee_1 <- d[treat %in% 0:4 & !(historyCode2016 %in% c('E', 'A')), 
+               lm(outcome ~ any_message)]
+model_no_absentee_2 <- d[treat %in% 0:4 & !(historyCode2016 %in% c('E', 'A')), 
+             felm(outcome ~ any_message | congressionalDistrict)]
+model_no_absentee_3 <- d[treat %in% 0:4 & !(historyCode2016 %in% c('E', 'A')), 
+             felm(outcome ~ any_message + factor(major_party) + race3 + 
+                    age + I(age^2) | congressionalDistrict)]
+model_no_absentee_subgroup_1 <- d[
+  treat %in% 0:4 & !(historyCode2016 %in% c('E', 'A')) & race3 == "White",
+  felm(outcome ~ any_message + factor(major_party) 
+         + age + I(age^2)  | congressionalDistrict)]
+model_no_absentee_subgroup_2 <- d[
+  treat %in% 0:4 & !(historyCode2016 %in% c('E', 'A')) & race3 == "Latino",
+  felm(outcome ~ any_message + factor(major_party)
+       + age + I(age^2) | congressionalDistrict)]
+model_no_absentee_subgroup_3 <- d[
+  treat %in% 0:4 & !(historyCode2016 %in% c('E', 'A')) & race3 == "Black",
+  felm(outcome ~ any_message + factor(major_party)
+       + age + I(age^2) | congressionalDistrict)]
+model_no_absentee_subgroup_hte <- d[
+  treat %in% 0:4 & !(historyCode2016 %in% c('E', 'A')),
+  felm(outcome ~ any_message * race3 + factor(major_party) 
+         + age + I(age^2)  | congressionalDistrict)]
+
+stargazer(
+  model_no_absentee_1, model_no_absentee_2, model_no_absentee_3, 
+  model_no_absentee_subgroup_hte, 
+  type = 'latex', 
+  omit.stat = c('ser', 'F'), 
+  covariate.labels = c(
+    'Any Message',
+    'Republican', 'Independent', 
+    'Black', 'Latino', 'Other', 
+    'Age', 'Age2', 
+    'Any Message * Black', 'Any Message * Latino', 'Any Message * Other'), 
+  title = 'Treatment Estimates Are Little Changed Excluding Vote-By-Mail Voters'
+)
+
+stargazer(
+  model_no_absentee_subgroup_1, model_no_absentee_subgroup_2, model_no_absentee_subgroup_3, 
+  type = 'latex', 
+  omit.stat = c('ser', 'F'),
+  covariate.labels = c(
+    'Any Message', 
+    'Republican', 'Independent', 
+    'Age', 'Age2'),
+  column.labels = c(
+    'White RV', 'Black RV', 'Latino RV'), 
+  title = 'Subgroup Treatment Estimates Are Little Changed Excluding Vote-By-Mail Voters'
+)
+```
+
+## How many people were kept from the polls? 
+
+How many registered voters did these email messages keep from voting? Including all individuals who were assigned to receive an email -- including those who voted early -- produces the largest estimate of this demobilizing effect. 
+
+```{r largest decrease in voting, echo = FALSE}
+analytic_sample_count <- d[!(historyCode2016 == 'E') & (treat %in% 1:4), .N]
+effect_and_se <- summary(model_3, robust = TRUE)$coefficients[1,1:2]
+low_and_high_ci <- effect_and_se[1] + c(-1.96, 1.96) %o% effect_and_se[2]
+
+ci <- analytic_sample_count * low_and_high_ci
+```
+
+In a model that does not condition on whether someone voted absentee -- necessary because it is *in principle* possible for a voter to receive our message and then decide the modality to use to cast their vote, a post-treatment decision -- we estimate that this message experiment reduced turnout by at most `r round(ci[1])`, and by at least `r round(ci[2])`. 
+
+# References
