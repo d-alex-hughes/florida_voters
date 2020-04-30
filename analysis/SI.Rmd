@@ -345,8 +345,8 @@ In the next plot we report the power achieved when comparing any one condition a
 
 \begin{figure}[p]
   \begin{center}
-  \includegraphics[width=0.45\linewidth]{/home/rstudio/tables-figures/power_plot.pdf}
-  \includegraphics[width=0.45\linewidth]{/home/rstudio/tables-figures/power_plot_by_condition.pdf}
+  \includegraphics[width=0.45\linewidth]{/home/rstudio/tables-figures/power_plots/power_plot.pdf}
+  \includegraphics[width=0.45\linewidth]{/home/rstudio/tables-figures/power_plots/power_plot_by_condition.pdf}
   \caption{\textbf{Left Plot: Any Message vs. Control}. Plotted is the power curve for a scenario comparing the  400,000 voters in any treatment group (100,000 per message) against the 100,000 voters in the control group. The vertical line is drawn at the achieved treatment effect reported in the main body of the text. The dashed vertical line is drawn at the minimum detectable effect given this sample and design. The solid vertical line is drawn at the achieved treatment effect reported in the main body of the text. \label{fig:total_power} \textbf{Right Plot: Message vs. Message}. Plotted is the power curve for a scenario comparing  100,000 voters in any one message group against 100,000 from another message group. The vertical line is drawn at the largest difference in message effects observed in this analysis. Even the largest effect is under-powered.\label{fig:power_by_message}}
   \end{center}
 \end{figure}
@@ -429,9 +429,9 @@ if(conduct_power == TRUE) {
 
 \begin{figure}[p]
   \begin{center}
-  \includegraphics[width=0.3\linewidth]{/home/rstudio/tables-figures/power_plot_by_group_white.pdf}
-  \includegraphics[width=0.3\linewidth]{/home/rstudio/tables-figures/power_plot_by_group_latino.pdf}
-  \includegraphics[width=0.3\linewidth]{/home/rstudio/tables-figures/power_plot_by_group_black.pdf}  
+  \includegraphics[width=0.3\linewidth]{/home/rstudio/tables-figures/power_plots/power_plot_by_group_white.pdf}
+  \includegraphics[width=0.3\linewidth]{/home/rstudio/tables-figures/power_plots/power_plot_by_group_latino.pdf}
+  \includegraphics[width=0.3\linewidth]{/home/rstudio/tables-figures/power_plots/power_plot_by_group_black.pdf}  
   \caption{\textbf{Any message vs. Control, by racial/ethnic group}. Plotted is the power achieved comparing voters within a racial/ethnic group who received any message against voters from the same group who were assigned to the control group. The vertical line is drawn at the largest difference in message effects observed in this analysis. The dashed vertical line is drawn at the minimum detectable effect given this sample and design. The solid vertical line is drawn at the achieved treatment effect reported in the main body of the text. \label{fig:power_by_message}}
   \end{center}
 \end{figure}
@@ -499,9 +499,9 @@ if(conduct_power == TRUE) {
 
 \begin{figure}[p]
   \begin{center}
-  \includegraphics[width=0.3\linewidth]{/home/rstudio/tables-figures/power_plot_by_group_white_by_condition.pdf}
-  \includegraphics[width=0.3\linewidth]{/home/rstudio/tables-figures/power_plot_by_group_latino_by_condition.pdf}
-  \includegraphics[width=0.3\linewidth]{/home/rstudio/tables-figures/power_plot_by_group_black_by_condition.pdf}  
+  \includegraphics[width=0.3\linewidth]{/home/rstudio/tables-figures/power_plots/power_plot_by_group_white_by_condition.pdf}
+  \includegraphics[width=0.3\linewidth]{/home/rstudio/tables-figures/power_plots/power_plot_by_group_latino_by_condition.pdf}
+  \includegraphics[width=0.3\linewidth]{/home/rstudio/tables-figures/power_plots/power_plot_by_group_black_by_condition.pdf}  
   \caption{\textbf{Messages vs. Message, by racial/ethnic group}. Plotted is the power achieved comparing voters within a racial/ethnic group who were assigned to receive a particular message against voters in that same group, who were assigned to receive a different specific message. The dashed vertical line is drawn at the minimum detectable effect given this sample and design. The solid vertical line is drawn at the achieved treatment effect reported in the main body of the text.}
   \end{center}
 \end{figure}
@@ -901,7 +901,9 @@ model_no_absentee_subgroup_hte <- d[
   treat %in% 0:4 & !(historyCode2016 %in% c('E', 'A')),
   felm(outcome ~ any_message * race3 + factor(major_party) 
          + age + I(age^2)  | congressionalDistrict)]
+```
 
+```{r print no absentee models, results = 'asis'}
 stargazer(
   model_no_absentee_1, model_no_absentee_2, model_no_absentee_3, 
   model_no_absentee_subgroup_hte, 
