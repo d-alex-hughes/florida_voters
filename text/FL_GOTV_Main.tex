@@ -42,7 +42,11 @@ citecolor=BrickRed,linkcolor=NavyBlue]{hyperref}
 \title{Email Mobilization Messages Suppress Turnout Among Black and Latino Voters:\\
   Experimental Evidence From the 2016 General Election\thanks{This
     research was approved by the institutional review board of the
-    University of Texas, Austin.}}  \date{\today}
+    University of Texas, Austin.  The data, code, and compute
+    environment required to replicate all analyses in this article are
+    available at the Journal of Experimental Political Science
+    Dataverse within the Harvard Dataverse Network, at:
+    doi:10.7910/DVN/B2IWMB.}}  \date{\today}
 
 
 %% anonymize IRB
@@ -53,21 +57,21 @@ citecolor=BrickRed,linkcolor=NavyBlue]{hyperref}
   \noindent \textbf{Word Count:}  1,142 \\ \\
   Email can deliver mobilization messages at considerably lower cost
   than direct mail. While voters’ email addresses are readily
-  available, experimental work from 2007-2012 suggests that
-  email mobilization is ineffective in most contexts. Here, we use
-  public data to reexamine the effectiveness of email mobilization in
-  the 2016 Florida general election. Unsolicited emails sent from a
+  available, experimental work from 2007-2012 suggests that email
+  mobilization is ineffective in most contexts. Here, we use public
+  data to reexamine the effectiveness of email mobilization in the
+  2016 Florida general election. Unsolicited emails sent from a
   university professor and designed to increase turnout had the
-  opposite effect: emails slightly demobilizing voters. While the overall
-  decrease in turnout amounted to less than 1 percent of the margin of
-  victory in the presidential race in the state, the demobilizing
-  effect was particularly pronounced among minority voters. Compared
-  to voters from the same group who were assigned to control, black
-  voters assigned to receive emails were 2.2 percentage points less
-  likely to turn out, and Latino voters were 1.0 percentage point less
-  likely to turn out. These findings encourage both campaigns and
-  researchers to think critically about the use and study of massive
-  impersonal mobilization methods.
+  opposite effect: emails slightly demobilizing voters. While the
+  overall decrease in turnout amounted to less than 1 percent of the
+  margin of victory in the presidential race in the state, the
+  demobilizing effect was particularly pronounced among minority
+  voters. Compared to voters from the same group who were assigned to
+  control, black voters assigned to receive emails were 2.2 percentage
+  points less likely to turn out, and Latino voters were 1.0
+  percentage point less likely to turn out. These findings encourage
+  both campaigns and researchers to think critically about the use and
+  study of massive impersonal mobilization methods.
 
 \end{abstract}
 
@@ -115,7 +119,7 @@ October 10, 2016 Florida Division of Elections voter roll. Random
 assignment to receive an email message was blocked on congressional
 district and self-reported race (See Table 2 in the SI). Of the more
 than 12 million registered voters in Florida, 503,859 provide a valid
-email and are assigned to a condition.
+email and are assigned to a condition \citep{rivera2020}.
 
 Of all votes cast during the 2016 general election in Florida, 39.7\%
 were cast early in-person, 29.4\% were by-mail, and 30.5\% were cast
@@ -123,8 +127,8 @@ in-person on election day. Throughout the reported results, the
 analytic sample is the group of $328,181$ Florida voters who provide a
 valid email address and did not vote early in-person. We include those
 who voted by mail, because some of these voters could have sent in
-their ballot after receiving a message. We exclude voters who cast
-a ballot early in-person, because these votes were cast before the
+their ballot after receiving a message. We exclude voters who cast a
+ballot early in-person, because these votes were cast before the
 distribution of our treatment messages. The analytic sample is notably
 younger than the whole set of registered voters, but otherwise broadly
 similar in terms of party affiliation, gender identification, and
@@ -151,8 +155,8 @@ intent-to-treat effects.
 Outcome data are drawn from the June 14, 2017 official voter roll.
 Voters assigned to receive no contact -- i.e. the control group --
 turned out to vote at a rate of 78.7 percent (see SI Section
-4.1.1).\footnote{At a target power of 0.8, this sample and design
-  can detect a difference in the rates of turnout as small as 0.3
+4.1.1).\footnote{At a target power of 0.8, this sample and design can
+  detect a difference in the rates of turnout as small as 0.3
   percentage points -- roughly half the size of the established effect
   size of direct-mail (see SI Section 3.5).}  Our main experimental
 finding, shown in \autoref{fig:subgroup}, is that those who were
@@ -168,20 +172,20 @@ $SE = 0.0017$).\footnote{All estimates use robust standard
 
 We further examine the effect of email messages within groups of
 self-identified black, Latino, and white voters.\footnote{See SI
-  Section 4.3 for details about estimation within subgroups.  See SI Table 7 for a test
-  for heterogeneous response to treatment between racial/ethnic
-  groups.}  Among the 36,518 black voters in the analytic sample, 64.0
-percent assigned to the control group voted, compared to 61.8 percent
-in the treatment group ($\bar{\tau}_{b} = -2.168$, robust
-$SE = 0.585$). Among the 63,404 Latino voters in the analytic sample,
-73.9 percent assigned to the control group voted, compared to 73.0
-percent in the treatment group ($\bar{\tau}_{l} = -0.970$, robust
-$SE = 0.414$).  Finally, among the 204,054 white voters in the
-analytic sample, 84.0 percent assigned to the control group voted,
-compared to 83.7 percent in the treatment group
-($\bar{\tau}_{w} = 0.309$, robust $SE = 0.193$). Plainly stated, these
-messages may have kept as many as 1,389 voters from going to the polls
-($95\%\textrm{ robust CI} = [-2249, -531]$).
+  Section 4.3 for details about estimation within subgroups.  See SI
+  Table 7 for a test for heterogeneous response to treatment between
+  racial/ethnic groups.}  Among the 36,518 black voters in the
+analytic sample, 64.0 percent assigned to the control group voted,
+compared to 61.8 percent in the treatment group
+($\bar{\tau}_{b} = -2.168$, robust $SE = 0.585$). Among the 63,404
+Latino voters in the analytic sample, 73.9 percent assigned to the
+control group voted, compared to 73.0 percent in the treatment group
+($\bar{\tau}_{l} = -0.970$, robust $SE = 0.414$).  Finally, among the
+204,054 white voters in the analytic sample, 84.0 percent assigned to
+the control group voted, compared to 83.7 percent in the treatment
+group ($\bar{\tau}_{w} = 0.309$, robust $SE = 0.193$). Plainly stated,
+these messages may have kept as many as 1,389 voters from going to the
+polls ($95\%\textrm{ robust CI} = [-2249, -531]$).
 
 \begin{figure}[t]
   \centering

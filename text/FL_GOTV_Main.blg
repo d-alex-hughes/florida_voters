@@ -1,0 +1,50 @@
+This is BibTeX, Version 0.99d (TeX Live 2018)
+Capacity: max_strings=100000, hash_size=100000, hash_prime=85009
+The top-level auxiliary file: FL_GOTV_Main.aux
+The style file: apsr.bst
+Database file #1: references.bib
+Warning--entry type for "rivera2020" isn't style-file defined
+--line 1725 of file references.bib
+Warning--there's a number but no volume in hughes2019
+You've used 23 entries,
+            2874 wiz_defined-function locations,
+            781 strings with 8868 characters,
+and the built_in function-call counts, 99124 in all, are:
+= -- 16343
+> -- 1085
+< -- 0
++ -- 7700
+- -- 388
+* -- 8447
+:= -- 19868
+add.period$ -- 93
+call.type$ -- 23
+change.case$ -- 299
+chr.to.int$ -- 23
+cite$ -- 24
+duplicate$ -- 350
+empty$ -- 738
+format.name$ -- 409
+if$ -- 17795
+int.to.chr$ -- 5
+int.to.str$ -- 0
+missing$ -- 25
+newline$ -- 104
+num.names$ -- 266
+pop$ -- 106
+preamble$ -- 1
+purify$ -- 345
+quote$ -- 0
+skip$ -- 293
+stack$ -- 0
+substring$ -- 23079
+swap$ -- 48
+text.length$ -- 322
+text.prefix$ -- 0
+top$ -- 0
+type$ -- 86
+warning$ -- 1
+while$ -- 539
+width$ -- 0
+write$ -- 319
+(There were 2 warnings)
