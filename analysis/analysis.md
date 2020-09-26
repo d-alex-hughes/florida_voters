@@ -51,12 +51,13 @@ Load data using the `load_and_clean_data` function described in
 use. If the researcher has saved a local copy of the data, they can set
 `load_and_clean_data` to read from the locally saved file. Or, if the
 researcher is reading from the remotly stored data (e.g. the s3 bucket
-or Dataverse), they can pass the URL of that
-data.
+or Dataverse), they can pass the URL of that data.
 
 ``` r
-d <- load_and_clean_data(f = '/home/rstudio/data/subset_finalAnalysisFile20170711.csv')
-## d <- load_and_clean_data('https://florida-voters.s3-us-west-1.amazonaws.com/subset_finalAnalysisFile20170711.csv')
+# d <- load_and_clean_data(
+#   f = 'https://florida-voters.s3-us-west-1.amazonaws.com/subset_finalAnalysisFile20170711.csv')
+d <- load_and_clean_data(
+  f = '/home/rstudio/data/subset_finalAnalysisFile20170711.csv')
 ```
 
 # Analysis
@@ -133,7 +134,7 @@ d[!(historyCode2016 %in% exclusion_set), mean(validEmail)]
 
     ## [1] 0.04523574
 
-## Summary Tables
+## Table 2: Comparison of Email Providers
 
 This section produces tables that are Table 2 in the published text.
 This first table compares people who provide email addresses to those
@@ -142,7 +143,11 @@ sample – those who provide email addresses and do not vote early –
 compare to the general population.
 
 ``` r
-## Build Tables one at a time. 
+## This chunk builds the summary table that compares: 
+##   (1) All Florida registered voters; 
+##   (2) Those Florida registered voters who provide email addresses; and, 
+##   (3) Those Florida registered voters who provide a valid email and were
+##       assigned to an experimental condition.
 
 summary_table <- d[ , .(
     "Two Party Dem. VS" = sum(party=="DEM") / sum(party%in%c("DEM", "REP")),
@@ -199,7 +204,7 @@ stargazer(
   summary_table, 
   type = "text", 
   title = "Comparison of Email Providers",
-  summary=F, digits=3
+  summary = F, digits = 3
   )
 ```
 
@@ -217,6 +222,44 @@ stargazer(
     ## SE.3                   0.0001    0.001   0.001   0.001 
     ## N                    12,339,702 629,738 503,859 328,181
     ## -------------------------------------------------------
+
+``` r
+## This call produces a file called `table1_raw.tex` in the folder `./tables-figures`. 
+## It is the second table in the published document (sorry for the numbering...)
+## The final version that is in the document makes formatting changes, to meet 
+## JEPS formatting standards but does not change information. 
+
+stargazer(
+  summary_table, 
+  type = "latex", 
+  out = "table1_raw.tex", 
+  title = "Comparison of Email Providers", 
+  summary = F, digits = 3
+)
+```
+
+    ## 
+    ## % Table created by stargazer v.5.2.2 by Marek Hlavac, Harvard University. E-mail: hlavac at fas.harvard.edu
+    ## % Date and time: Fri, Sep 25, 2020 - 08:28:59 PM
+    ## \begin{table}[!htbp] \centering 
+    ##   \caption{Comparison of Email Providers} 
+    ##   \label{} 
+    ## \begin{tabular}{@{\extracolsep{5pt}} ccccc} 
+    ## \\[-1.8ex]\hline 
+    ## \hline \\[-1.8ex] 
+    ## Data.Set & $0$ & $1$ & $2$ & $3$ \\ 
+    ## Two.Party.Dem..VS & $0.513$ & $0.515$ & $0.521$ & $0.513$ \\ 
+    ## SE & $0.00000$ & $0.00000$ & $0.00000$ & $0.00000$ \\ 
+    ## Age.in.2016 & $51.517$ & $45.726$ & $45.502$ & $45.259$ \\ 
+    ## SE.1 & $0.005$ & $0.023$ & $0.026$ & $0.033$ \\ 
+    ## Proportion.Female & $0.528$ & $0.523$ & $0.522$ & $0.521$ \\ 
+    ## SE.2 & $0.0001$ & $0.001$ & $0.001$ & $0.001$ \\ 
+    ## Proportion.non.White & $0.286$ & $0.314$ & $0.322$ & $0.304$ \\ 
+    ## SE.3 & $0.0001$ & $0.001$ & $0.001$ & $0.001$ \\ 
+    ## N & $12,339,702$ & $629,738$ & $503,859$ & $328,181$ \\ 
+    ## \hline \\[-1.8ex] 
+    ## \end{tabular} 
+    ## \end{table}
 
 ## Randomization Check
 
@@ -454,13 +497,14 @@ voters. The lack of effect is evident in the following plot.
 plot_message(model2_fe, make_pdf = FALSE)
 ```
 
-![](analysis_files/figure-gfm/plot%20message%20effects-1.png)<!-- -->
+![](analysis_files/figure-gfm/plot_message_effects-1.png)<!-- -->
 
 ## Treatment Effects Among Specific Groups
 
 The average rate of turnout among those in the analytic sample who were
-assigned to control is about
-78.7.
+assigned to control is about 78.7. This section of code produces Figure
+1 in the published
+document.
 
 ``` r
 mu_control <- round(d[treat %in% 0 & !(historyCode2016 %in% exclusion_set), mean(outcome)], 4)
@@ -580,9 +624,11 @@ stargazer(
     ## ==============================================================================
     ## Note:                                              *p<0.1; **p<0.05; ***p<0.01
 
-Plot these results, by each group
+# Figure 1
 
 ``` r
+## This call produces Figure 1 in the published manuscript. 
+
 plot_subgroup(
   model_all = mod_all,
   model_white = mod_white, 
@@ -591,4 +637,4 @@ plot_subgroup(
 )
 ```
 
-![](analysis_files/figure-gfm/plot%20racial%20ethnic%20subgroup%20message%20effect-1.png)<!-- -->
+![](analysis_files/figure-gfm/plot_racial-ethnic_subgroup_effects-1.png)<!-- -->

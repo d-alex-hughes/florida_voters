@@ -170,7 +170,12 @@ colnames(summary_table) <- c(
   )
 ```
 
-```{r print summary table, results='asis', echo = FALSE}
+### Table 1: Analytic Sample 
+
+```{r table 1, results='asis', echo = FALSE}
+
+## This chunk produces 'Table 1: Analytic Sample' in the SI. 
+
 stargazer(
   summary_table, 
   type = 'latex', 
@@ -242,7 +247,12 @@ rownames(covariate_balance_table) <- c(
 colnames(covariate_balance_table) <- c('Control', 'Any Email')
 ```
 
-```{r randomization table, echo = FALSE, results = 'asis'}
+### Table 2: Randomization Check 
+
+```{r table 2, echo = FALSE, results = 'asis'}
+
+## This chunk produces Table 2: Randomization Check in the SI. 
+
 stargazer(
   covariate_balance_table, 
   title = 'Randomization Check', 
@@ -295,7 +305,13 @@ Although the limitations of the delivery infrastructure lead our estimates to be
 
 In this section, we report *ex post* power analysis information drawn from the analysis reported in the main text of the paper. In our preferred model specification, our experimental messaging caused a control vs. any treatment difference in turnout rates of 0.5 percentage points. We use this treatment effect estimate together with the number of registered voters in each condition to compute a simulated value for the achieved power in this test.\footnote{Code to support this is included in the repository for this project.} As we report in Figure 1, we find that, when comparing the 400,000 registered voters who received any form of message against the 100,000 registered voters who did not receive any contact this test is adequately powered.
 
-```{r any message power analysis, echo = FALSE}
+### Figure 1: Left Plot: Any Message vs. Control 
+
+```{r figure 1, echo = FALSE}
+
+## This chunk produces the left plot in Figure 1 titled
+## "Any Message vs. Achieved Power" in the SI 
+
 if(conduct_power == TRUE) { 
   effect_size <- seq(from = 0, to = .01, length.out = 11)
 
@@ -317,9 +333,13 @@ if(conduct_power == TRUE) {
 }
 ```
 
-### Power: All Voters, Message vs. Message
+### Figure 1: Right Plot: Message vs. Message
 
 ```{r message-vs-message power analysis, echo = FALSE}
+
+## This chunk produces the right plot in Figure 1 titled
+## "Message vs. Message Achieved Power" in the SI
+
 if(conduct_power == TRUE) { 
   effect_size <- seq(from = 0, to = 0.01, length.out = 22)
   power_by_condition <- rep(NA, length(effect_size))
@@ -361,7 +381,13 @@ In this section we estimate the power that is achieved in this design for groups
 - Among Latino voters, there are approximately 12,500 voters that are assigned to control and 50,000 assigned to treatment. 
 - Among black voters, there are approximately 7,300 voters that are assigned to control and 30,000 assigned to treatment. 
 
-```{r power-among-white-voters, echo = FALSE}
+### Figure 2: Any Message vs. Control, by Racial/Ethnic group
+
+```{r figure 2 - left plot, echo = FALSE}
+
+## This chunk produces the left most plot in Figure 2 titled
+## "Any Message vs. Control, by racial/ethnic group" in the SI 
+
 if(conduct_power == TRUE) { 
   effect_size <- seq(from=0, to = 0.025, length.out = 33)
   power_by_group_white <- rep(NA, length(effect_size))
@@ -383,7 +409,11 @@ if(conduct_power == TRUE) {
 }
 ```
 
-```{r power-among-latino-voters, echo = FALSE}
+```{r figure 2 - center plot, echo = FALSE}
+
+## This chunk produces the center plot in Figure 2 titled
+## "Any Message vs. Control, by racial/ethnic group" in the SI 
+
 if(conduct_power == TRUE) { 
   effect_size <- seq(from=0, to = 0.025, length.out = 33)
   power_by_group_latino <- rep(NA, length(effect_size))
@@ -405,7 +435,11 @@ if(conduct_power == TRUE) {
 }
 ```
 
-```{r power-among-black-voters, echo = FALSE}
+```{r figure 2 - right plot, echo = FALSE}
+
+## This chunk produces the right most plot in Figure 2 titled
+## "Any Message vs. Control, by racial/ethnic group" in the SI 
+
 if(conduct_power == TRUE) { 
   effect_size <- seq(from=0, to = 0.025, length.out = 33)
   power_by_group_black <- rep(NA, length(effect_size))
@@ -472,7 +506,17 @@ if(conduct_power == TRUE) {
           1000, 0.63, 0.63 + effect_size[eff], 7300, 7300
       )
   }
-  
+}
+```  
+
+### Figure 3: Messages vs. Message, by Racial/Ethnic Group
+    
+```{r figure 3 - power plots - message by message - white voters}
+
+## This chunk produces the left most plot in Figure 3 titled
+## "Messages vs. Message, by racial/ethnic group" in the SI 
+
+if(conduct_power == TRUE) { 
   plot_power(
       power = power_by_group_white_by_message,
       effect_size = effect_size,
@@ -480,6 +524,15 @@ if(conduct_power == TRUE) {
       main = 'White Voters: Message vs. Message Achieved Power',
       file = 'power_plot_by_group_white_by_condition.pdf'
   )
+}
+```
+
+```{r figure 3 - power plots - message by message - latino voters}
+
+## This chunk produces the center plot in Figure 3 titled
+## "Messages vs. Message, by racial/ethnic group" in the SI 
+
+if(conduct_power == TRUE) { 
   plot_power(
       power = power_by_group_latino_by_message,
       effect_size = effect_size,
@@ -487,6 +540,15 @@ if(conduct_power == TRUE) {
       main = 'Latino Voters: Message vs. Message Achieved Power',
       file = 'power_plot_by_group_latino_by_condition.pdf'
   )
+}
+```
+
+```{r figure 3 - power plots - message by message - black voters}
+
+## This chunk produces the right most plot in Figure 3 titled
+## "Messages vs. Message, by racial/ethnic group" in the SI 
+
+if(conduct_power == TRUE) { 
   plot_power(
       power = power_by_group_black_by_message,
       effect_size = effect_size,
@@ -571,9 +633,12 @@ model_3 <- d[treat %in% 0:4 & !(historyCode2016 == 'E'),
                     age + I(age^2) | congressionalDistrict)]
 ```
 
-### Results for Main Model
+### Table 4: Main Model of Effects 
 
-```{r print main effects of treatment models, echo = FALSE, results = 'asis'}
+```{r table 4, echo = FALSE, results = 'asis'}
+
+## This chunk produces "Table 4: Main Model of Effects" in the SI. 
+
 stargazer(
   model_1, model_2, model_3, 
   title = 'Main Model of Effects', 
@@ -628,7 +693,12 @@ message_anova <- anova(model_4, model_5, test = 'F')
 
 Indeed, an F-test for whether individual coefficients for each message improve the fit of the model above a single $\bar{\tau}$ returns a p-value of `r round(message_anova$"Pr(>F)"[2], 2)`. 
 
-```{r print message effects, results='asis', echo = FALSE}
+### Table 5: Message Effects
+
+```{r table 5, results='asis', echo = FALSE}
+
+## This chunk produces "Table 5: Message Effects" in the SI. 
+
 stargazer(
   model_4, model_5, model_6, model_7, 
   type = 'latex', 
@@ -680,7 +750,12 @@ model_9 <- d[
        + age + I(age^2) | congressionalDistrict)]
 ```
 
-```{r print subgroup effects, echo = FALSE, results = 'asis'}
+### Table 6: Message Effect, by Racial/Ethnic Subgroup
+
+```{r table 6, echo = FALSE, results = 'asis'}
+
+## This chunk produces "Table 6: Message Effect, by Racial/Ethnic Subgroup" in the SI. 
+
 stargazer(
   model_7, model_8, model_9, 
   type = 'latex', 
@@ -696,7 +771,12 @@ stargazer(
 )
 ```
 
-```{r plot subgroup effects, echo = FALSE, results = FALSE} 
+### Figure 7: Subgroup Effects
+
+```{r figure 7, echo = FALSE, results = FALSE} 
+
+## This chunk produces "Figure 7: Subgroup Effects" in the SI. 
+
 plot_subgroup(
   model_7, model_8, model_9, model_2,
   make_pdf = TRUE, file = 'subgroup_effects.pdf'
@@ -722,7 +802,12 @@ model_hte <- d[
          + age + I(age^2)  | congressionalDistrict)]
 ```
 
-```{r, echo = FALSE, results = 'asis'}
+### Table 7: Heterogeneous Effects of Treatmetn by Racial/Ethnic Group
+
+```{r table 7, echo = FALSE, results = 'asis'}
+
+## This chunk produces "Table 7: Heterogeneous Effects of Treatment by Racial/Ethnic Group" in the SI. 
+
 stargazer(
   model_hte, 
   type = 'latex', 
@@ -784,23 +869,55 @@ subgroup_black <- d_subgroup[treat %in% 0:4 & race3 == 'Black', .(
   keyby = .('Message Label' = treat_label)]
 ```
 
-```{r, results='asis', echo = FALSE}
+### Table 8: Voting Rate and Observations, By Group 
+
+```{r Table 8, results='asis', echo = FALSE}
+
+## This chunk produces "Table 8: Voting Rate and Observations, By Group" in the SI
+
 stargazer(
   voters_by_race, 
   type = 'latex', title = 'Voting Rate and Observations, By Group',
   summary = FALSE, 
   header = FALSE
 )
+```
+
+### Table 9: Voting Rate and Observations Among White Voters
+
+```{r Table 9, results='asis', echo = FALSE}
+
+## This chunk produces "Table 9: Voting Rate and Observations Among White Voters"
+## in the SI. 
+
 stargazer(
   subgroup_white,
   type = 'latex', title = 'Voting Rate and Observations Among White Voters',
   summary = FALSE, header = FALSE
 )
+```
+
+### Table 10: Voting Rate and Observations Among Latino Voters
+
+```{r table 10, results='asis', echo = FALSE}
+
+## This chunk produces "Table 10: Voting Rate and Observations Among Latino Voters"
+## in the SI. 
+
 stargazer(
   subgroup_latino,
   type = 'latex', title = 'Voting Rate and Observations Among Latino Voters',
   summary = FALSE, header = FALSE
 )
+```
+
+### Table 11: Voting Rate and Observations Among Black Voters
+
+```{r table 11, results='asis', echo=FALSE}
+
+## This chunk produces "Table 11: Voting Rate and Observations Among Black Voters" 
+## in the SI. 
+
 stargazer(
   subgroup_black,
   type = 'latex', title = 'Voting Rate and Observations Among Black Voters',
@@ -827,7 +944,13 @@ model_12 <- d[
        + age + I(age^2) | congressionalDistrict)]
 ```
 
-```{r report message-by-subgroup, echo = FALSE, results = 'asis'}
+### Table 12: Message Effects, By Racial/Ethnic Subgroup
+
+```{r table 12, echo = FALSE, results = 'asis'}
+
+## This chunk produces "Table 12: Message Effects, By Racial/Ethnic Subgroup" 
+## in the SI. 
+
 stargazer(
   model_10, model_11, model_12, 
   type = 'latex', 
@@ -844,9 +967,12 @@ stargazer(
 )
 ```
 
-We plot these results for ease of interpretation in Figure 7. 
+### Figure 8: Message by Subgroup Effects 
 
 ```{r plot message-by-subgroup, echo = FALSE, results = FALSE}
+
+## This chunk produces "Figure 8: Message by Subgroup Effects" in the SI. 
+
 plot_message_by_subgroup(
   model_10, model_11, model_12, 
   make_pdf = TRUE, file = 'message-by-subgroup.pdf')
@@ -903,7 +1029,13 @@ model_no_absentee_subgroup_hte <- d[
          + age + I(age^2)  | congressionalDistrict)]
 ```
 
-```{r print no absentee models, results = 'asis'}
+### Table 13: Treatment Estimates are Little Changed Excluding Vote-By-Mail Voters
+
+```{r table 13, results = 'asis', echo = FALSE}
+
+## This chunk produces "Table 13: Treatment Estimates are Little 
+## Changed Excluding Vote-By-Mail Voters" in the SI. 
+
 stargazer(
   model_no_absentee_1, model_no_absentee_2, model_no_absentee_3, 
   model_no_absentee_subgroup_hte, 
@@ -917,6 +1049,13 @@ stargazer(
     'Any Message * Black', 'Any Message * Latino', 'Any Message * Other'), 
   title = 'Treatment Estimates Are Little Changed Excluding Vote-By-Mail Voters'
 )
+```
+
+### Table 14: Subgroup Treatment Effects are Little Changed Excluding Vote-By-Mail Voters
+
+```{r table 14, results = 'asis', echo = FALSE}
+
+## This chunk produces "Table 14: Subgroup Treatment Effects are Little Changed Excluding Vote-By-Mail Voters" in the SI. 
 
 stargazer(
   model_no_absentee_subgroup_1, model_no_absentee_subgroup_2, model_no_absentee_subgroup_3, 

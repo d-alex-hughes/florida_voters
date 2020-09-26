@@ -41,8 +41,10 @@ exclusion_set <- c('E')
 Load data using the `load_and_clean_data` function described in `./src/`. This uses `data.table::fread` and then recodes variables for use. If the researcher has saved a local copy of the data, they can set `load_and_clean_data` to read from the locally saved file. Or, if the researcher is reading from the remotly stored data (e.g. the s3 bucket or Dataverse), they can pass the URL of that data. 
 
 ```{r load data}
-d <- load_and_clean_data('https://florida-voters.s3-us-west-1.amazonaws.com/subset_finalAnalysisFile20170711.csv')
-# d <- load_and_clean_data(f = '/home/rstudio/data/subset_finalAnalysisFile20170711.csv')
+# d <- load_and_clean_data(
+#   f = 'https://florida-voters.s3-us-west-1.amazonaws.com/subset_finalAnalysisFile20170711.csv')
+d <- load_and_clean_data(
+  f = '/home/rstudio/data/subset_finalAnalysisFile20170711.csv')
 ```
 
 # Analysis 
@@ -96,13 +98,17 @@ The rate of email address provision is lower in among the analytic sample
 d[!(historyCode2016 %in% exclusion_set), mean(validEmail)]
 ```
 
-## Summary Tables
+## Table 2: Comparison of Email Providers
 
 This section produces tables that are Table 2 in the published text. This first table compares people who provide email addresses to those who do not provide email addresses. It also shows how the analytic sample -- those who provide email addresses and do not vote early -- compare to the general population. 
 
 ```{r summary tables}
 
-## Build Tables one at a time. 
+## This chunk builds the summary table that compares: 
+##   (1) All Florida registered voters; 
+##   (2) Those Florida registered voters who provide email addresses; and, 
+##   (3) Those Florida registered voters who provide a valid email and were
+##       assigned to an experimental condition.
 
 summary_table <- d[ , .(
     "Two Party Dem. VS" = sum(party=="DEM") / sum(party%in%c("DEM", "REP")),
@@ -159,8 +165,23 @@ stargazer(
   summary_table, 
   type = "text", 
   title = "Comparison of Email Providers",
-  summary=F, digits=3
+  summary = F, digits = 3
   )
+
+## This call produces a file called `table1_raw.tex` in the folder `./tables-figures`. 
+## It is the second table in the published document (sorry for the numbering...)
+## The final version that is in the document makes formatting changes, to meet 
+## JEPS formatting standards but does not change information. 
+```
+
+```{r, results='hide'}
+stargazer(
+  summary_table, 
+  type = "latex", 
+  out = "table1_raw.tex", 
+  title = "Comparison of Email Providers", 
+  summary = F, digits = 3
+)
 ```
 
 ## Randomization Check
@@ -194,6 +215,7 @@ stargazer(randomizationCheck,
           column.labels = c('Control', 'Baseline', 'General Social Norm', 'Ethnic Norm 1', 'Ethnic Norm 2')
         )
 ```
+
 Consistent with Green and Gerber (2012), here we examine whether any of the covariate featuers that we posess predict treatment. There is no evidence of a problem. 
 
 ```{r green and gerber check}
@@ -289,7 +311,7 @@ plot_message(model2_fe, make_pdf = FALSE)
 
 ## Treatment Effects Among Specific Groups
 
-The average rate of turnout among those in the analytic sample who were assigned to control is about 78.7. 
+The average rate of turnout among those in the analytic sample who were assigned to control is about 78.7. This section of code produces Figure 1 in the published document. 
 
 ```{r analytic sample control group}
 mu_control <- round(d[treat %in% 0 & !(historyCode2016 %in% exclusion_set), mean(outcome)], 4)
@@ -359,9 +381,12 @@ stargazer(
 )
 ```
 
-Plot these results, by each group
+# Figure 1
 
 ```{r plot_racial-ethnic_subgroup_effects}
+
+## This call produces Figure 1 in the published manuscript. 
+
 plot_subgroup(
   model_all = mod_all,
   model_white = mod_white, 
