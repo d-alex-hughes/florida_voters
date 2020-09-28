@@ -228,7 +228,9 @@ stargazer(
 ## It is the second table in the published document (sorry for the numbering...)
 ## The final version that is in the document makes formatting changes, to meet 
 ## JEPS formatting standards but does not change information. 
+```
 
+``` r
 stargazer(
   summary_table, 
   type = "latex", 
@@ -237,29 +239,6 @@ stargazer(
   summary = F, digits = 3
 )
 ```
-
-    ## 
-    ## % Table created by stargazer v.5.2.2 by Marek Hlavac, Harvard University. E-mail: hlavac at fas.harvard.edu
-    ## % Date and time: Fri, Sep 25, 2020 - 08:28:59 PM
-    ## \begin{table}[!htbp] \centering 
-    ##   \caption{Comparison of Email Providers} 
-    ##   \label{} 
-    ## \begin{tabular}{@{\extracolsep{5pt}} ccccc} 
-    ## \\[-1.8ex]\hline 
-    ## \hline \\[-1.8ex] 
-    ## Data.Set & $0$ & $1$ & $2$ & $3$ \\ 
-    ## Two.Party.Dem..VS & $0.513$ & $0.515$ & $0.521$ & $0.513$ \\ 
-    ## SE & $0.00000$ & $0.00000$ & $0.00000$ & $0.00000$ \\ 
-    ## Age.in.2016 & $51.517$ & $45.726$ & $45.502$ & $45.259$ \\ 
-    ## SE.1 & $0.005$ & $0.023$ & $0.026$ & $0.033$ \\ 
-    ## Proportion.Female & $0.528$ & $0.523$ & $0.522$ & $0.521$ \\ 
-    ## SE.2 & $0.0001$ & $0.001$ & $0.001$ & $0.001$ \\ 
-    ## Proportion.non.White & $0.286$ & $0.314$ & $0.322$ & $0.304$ \\ 
-    ## SE.3 & $0.0001$ & $0.001$ & $0.001$ & $0.001$ \\ 
-    ## N & $12,339,702$ & $629,738$ & $503,859$ & $328,181$ \\ 
-    ## \hline \\[-1.8ex] 
-    ## \end{tabular} 
-    ## \end{table}
 
 ## Randomization Check
 
@@ -494,10 +473,11 @@ that there is a difference in turnout, based on the message sent to
 voters. The lack of effect is evident in the following plot.
 
 ``` r
-plot_message(model2_fe, make_pdf = FALSE)
+plot_message(model2_fe, make_pdf = TRUE, file = 'message_effects.pdf')
 ```
 
-![](analysis_files/figure-gfm/plot_message_effects-1.png)<!-- -->
+    ## png 
+    ##   2
 
 ## Treatment Effects Among Specific Groups
 
@@ -540,6 +520,7 @@ who are assigned to control, by racial/ethnic
 group.
 
 ``` r
+mu_all    <- round(d[treat == 0 & !(historyCode2016 %in% exclusion_set),  mean(outcome)], 4)
 mu_white  <- round(d[treat == 0 & !(historyCode2016 %in% exclusion_set) & race3 == "White", mean(outcome)], 4)
 mu_latino <- round(d[treat == 0 & !(historyCode2016 %in% exclusion_set) & race3 == "Latino", mean(outcome)], 4)
 mu_black  <- round(d[treat == 0 & !(historyCode2016 %in% exclusion_set) & race3 == "Black", mean(outcome)], 4)
@@ -563,66 +544,72 @@ mod_black <- d[treat %in% 0:4 & !(historyCode2016 %in% exclusion_set) & race3 ==
              + age + I(age^2) + registrationYear | congressionalDistrict)]
 ```
 
-Print the results from the racial/ethnic subgroups.
+## In Text Results: Effect by Racial/Ethnic Group
+
+The following table includes estimates of treatment effects grouped for
+all voters, and for voters grouped by self-identified race/ethnicity.
+These models are reported in-text in **Section 3: Results**.
 
 ``` r
 stargazer(
-  mod_white, mod_latino, mod_black,
+  mod_all, mod_white, mod_latino, mod_black,
   se = list(
-    felm_rses(mod_white), felm_rses(mod_latino), felm_rses(mod_black)), 
+    felm_rses(mod_all), felm_rses(mod_white), 
+    felm_rses(mod_latino), felm_rses(mod_black)), 
   type = 'text', 
   digits = 3, 
   covariate.labels = c(
     'Any Message',
-    'Republican', 'Independent', 
-    'Age', 'Age2', 
-    'Registration Year'), 
+    'Republican', 'Independent',
+    'Age', 'Age2',
+    'Registration Year'),
   apply.coef = function(x) x * 100, 
   apply.se   = function(x) x * 100, 
   add.lines = list(
-    c('DV Mean (Percentage)', round(mu_white * 100, 2), 
+    c('DV Mean (Percentage)', 
+      round(mu_all * 100, 2), round(mu_white * 100, 2), 
       round(mu_latino * 100, 2), round(mu_black * 100, 2))
   ),
   title = 'Turnout by Racial/Ethnic Group, Percentage Points',
-  column.labels = c('White', 'Latino', 'Black')
+  column.labels = c('All RV', 'White', 'Latino', 'Black')
 )
 ```
 
     ## 
     ## Turnout by Racial/Ethnic Group, Percentage Points
-    ## ==============================================================================
-    ##                                         Dependent variable:                   
-    ##                      ---------------------------------------------------------
-    ##                                               outcome                         
-    ##                             White              Latino             Black       
-    ##                              (1)                (2)                (3)        
-    ## ------------------------------------------------------------------------------
-    ## Any Message                -0.309             -0.970**          -2.168***     
-    ##                            (0.193)            (0.414)            (0.585)      
-    ##                                                                               
-    ## Republican                0.468***           -1.754***          -6.862***     
-    ##                            (0.177)            (0.428)            (1.135)      
-    ##                                                                               
-    ## Independent               -9.752***          -9.765***          -11.214***    
-    ##                            (0.231)            (0.394)            (0.601)      
-    ##                                                                               
-    ## Age                       1.254***            2.003***           2.065***     
-    ##                            (0.025)            (0.049)            (0.072)      
-    ##                                                                               
-    ## Age2                      -0.009***          -0.016***          -0.016***     
-    ##                           (0.0002)            (0.001)            (0.001)      
-    ##                                                                               
-    ## Registration Year         -0.275***          -0.444***          -0.539***     
-    ##                            (0.007)            (0.018)            (0.027)      
-    ##                                                                               
-    ## ------------------------------------------------------------------------------
-    ## DV Mean (Percentage)         84                73.93              64.04       
-    ## Observations               203,917             63,369             36,482      
-    ## R2                          0.095              0.107              0.132       
-    ## Adjusted R2                 0.095              0.107              0.131       
-    ## Residual Std. Error  0.351 (df = 203884) 0.420 (df = 63336) 0.451 (df = 36449)
-    ## ==============================================================================
-    ## Note:                                              *p<0.1; **p<0.05; ***p<0.01
+    ## ==================================================================================================
+    ##                                                   Dependent variable:                             
+    ##                      -----------------------------------------------------------------------------
+    ##                                                         outcome                                   
+    ##                            All RV               White              Latino             Black       
+    ##                              (1)                 (2)                (3)                (4)        
+    ## --------------------------------------------------------------------------------------------------
+    ## Any Message               -0.534***            -0.309             -0.970**          -2.168***     
+    ##                            (0.167)             (0.193)            (0.414)            (0.585)      
+    ##                                                                                                   
+    ## Republican                2.080***            0.468***           -1.754***          -6.862***     
+    ##                            (0.155)             (0.177)            (0.428)            (1.135)      
+    ##                                                                                                   
+    ## Independent               -8.994***           -9.752***          -9.765***          -11.214***    
+    ##                            (0.183)             (0.231)            (0.394)            (0.601)      
+    ##                                                                                                   
+    ## Age                       1.637***            1.254***            2.003***           2.065***     
+    ##                            (0.020)             (0.025)            (0.049)            (0.072)      
+    ##                                                                                                   
+    ## Age2                      -0.012***           -0.009***          -0.016***          -0.016***     
+    ##                           (0.0002)            (0.0002)            (0.001)            (0.001)      
+    ##                                                                                                   
+    ## Registration Year         -0.344***           -0.275***          -0.444***          -0.539***     
+    ##                            (0.006)             (0.007)            (0.018)            (0.027)      
+    ##                                                                                                   
+    ## --------------------------------------------------------------------------------------------------
+    ## DV Mean (Percentage)        78.65                84                73.93              64.04       
+    ## Observations               327,952             203,917             63,369             36,482      
+    ## R2                          0.123               0.095              0.107              0.132       
+    ## Adjusted R2                 0.123               0.095              0.107              0.131       
+    ## Residual Std. Error  0.387 (df = 327919) 0.351 (df = 203884) 0.420 (df = 63336) 0.451 (df = 36449)
+    ## ==================================================================================================
+    ## Note:                                                                  *p<0.1; **p<0.05; ***p<0.01
 
 # Figure 1
 

@@ -306,7 +306,7 @@ anova_result
 As is evident in the analysis above, there is little evidence to suggest that there is a difference in turnout, based on the message sent to voters. The lack of effect is evident in the following plot.  
 
 ```{r plot_message_effects}
-plot_message(model2_fe, make_pdf = FALSE)
+plot_message(model2_fe, make_pdf = TRUE, file = 'message_effects.pdf')
 ```
 
 ## Treatment Effects Among Specific Groups
@@ -334,6 +334,7 @@ The by group estimates reported in the main body of the paper work in the follow
 Compute the average rate of turnout among those in the analytic sample who are assigned to control, by racial/ethnic group. 
 
 ```{r control turnout rate by racial-ethnic group}
+mu_all    <- round(d[treat == 0 & !(historyCode2016 %in% exclusion_set),  mean(outcome)], 4)
 mu_white  <- round(d[treat == 0 & !(historyCode2016 %in% exclusion_set) & race3 == "White", mean(outcome)], 4)
 mu_latino <- round(d[treat == 0 & !(historyCode2016 %in% exclusion_set) & race3 == "Latino", mean(outcome)], 4)
 mu_black  <- round(d[treat == 0 & !(historyCode2016 %in% exclusion_set) & race3 == "Black", mean(outcome)], 4)
@@ -356,28 +357,32 @@ mod_black <- d[treat %in% 0:4 & !(historyCode2016 %in% exclusion_set) & race3 ==
              + age + I(age^2) + registrationYear | congressionalDistrict)]
 ```
 
-Print the results from the racial/ethnic subgroups.
+## In Text Results: Effect by Racial/Ethnic Group 
+
+The following table includes estimates of treatment effects grouped for all voters, and for voters grouped by self-identified race/ethnicity. These models are reported in-text in **Section 3: Results**. 
 
 ```{r print results of racial-ethnic groups}
 stargazer(
-  mod_white, mod_latino, mod_black,
+  mod_all, mod_white, mod_latino, mod_black,
   se = list(
-    felm_rses(mod_white), felm_rses(mod_latino), felm_rses(mod_black)), 
+    felm_rses(mod_all), felm_rses(mod_white), 
+    felm_rses(mod_latino), felm_rses(mod_black)), 
   type = 'text', 
   digits = 3, 
   covariate.labels = c(
     'Any Message',
-    'Republican', 'Independent', 
-    'Age', 'Age2', 
-    'Registration Year'), 
+    'Republican', 'Independent',
+    'Age', 'Age2',
+    'Registration Year'),
   apply.coef = function(x) x * 100, 
   apply.se   = function(x) x * 100, 
   add.lines = list(
-    c('DV Mean (Percentage)', round(mu_white * 100, 2), 
+    c('DV Mean (Percentage)', 
+      round(mu_all * 100, 2), round(mu_white * 100, 2), 
       round(mu_latino * 100, 2), round(mu_black * 100, 2))
   ),
   title = 'Turnout by Racial/Ethnic Group, Percentage Points',
-  column.labels = c('White', 'Latino', 'Black')
+  column.labels = c('All RV', 'White', 'Latino', 'Black')
 )
 ```
 

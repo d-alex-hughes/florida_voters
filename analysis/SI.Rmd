@@ -686,7 +686,7 @@ model_6 <- d[treat %in% 0:4 & !(historyCode2016 == 'E'),
              felm(outcome ~ factor(treat) | congressionalDistrict)]
 model_7 <- d[treat %in% 0:4 & !(historyCode2016 == 'E'), 
              felm(outcome ~ factor(treat) + factor(major_party) + 
-                    race3 + age + I(age^2) | congressionalDistrict)]
+                    race3 + age + I(age^2) + registrationYear| congressionalDistrict)]
 
 message_anova <- anova(model_4, model_5, test = 'F')
 ```
@@ -728,6 +728,16 @@ stargazer(
     \caption{Message Effects\label{fig:message-effects}}
   \end{center}
 \end{figure} 
+
+### Figure 6: Message Effects
+
+```{r figure 6: message effects, echo = FALSE}
+
+## This chunk produces "Figure 6: Message Effects" in the SI. 
+
+plot_message(model_7, make_pdf = FALSE, file = 'message_effects.pdf')
+```
+
 
 ## Subgroups
 ### Estimation Details for Subgroups
@@ -1071,14 +1081,14 @@ stargazer(
 )
 ```
 
-## How many people were kept from the polls? 
+## In Text Result: How many people were kept from the polls? 
 
 How many registered voters did these email messages keep from voting? Including all individuals who were assigned to receive an email -- including those who voted early -- produces the largest estimate of this demobilizing effect. 
 
 ```{r largest decrease in voting, echo = FALSE}
 analytic_sample_count <- d[!(historyCode2016 == 'E') & (treat %in% 1:4), .N]
 effect_and_se <- summary(model_3, robust = TRUE)$coefficients[1,1:2]
-low_and_high_ci <- effect_and_se[1] + c(-1.96, 1.96) %o% effect_and_se[2]
+low_and_high_ci <- effect_and_se[1] + c(-1.96, 0, 1.96) %o% effect_and_se[2]
 
 ci <- analytic_sample_count * low_and_high_ci
 ```
