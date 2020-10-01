@@ -398,7 +398,7 @@ plot_subgroup(
   model_latino = mod_latino, 
   model_black = mod_black, 
   make_pdf = TRUE,
-  file = 'figure_1.tex'
+  file = 'figure_1.pdf'
 )
 
 plot_subgroup
