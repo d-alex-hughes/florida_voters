@@ -396,6 +396,11 @@ plot_subgroup(
   model_all = mod_all,
   model_white = mod_white, 
   model_latino = mod_latino, 
-  model_black = mod_black
+  model_black = mod_black, 
+  make_pdf = TRUE,
+  file = 'figure_1.tex'
 )
+
+plot_subgroup
+
 ```
