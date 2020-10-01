@@ -123,8 +123,8 @@ plot_message <- function(model, make_pdf = FALSE, file = NULL) {
     axis(
         1, at = 1:4, 
         labels = c(
-            "Baseline", "General\nSocial Norm", 
-            "Ethnic\nSocial Norm 1", "Ethnic\nSocial Norm 2"), 
+            "Baseline", "General\nS. Norm", 
+            "Ethnic\nS. Norm 1", "Ethnic\nS. Norm 2"), 
         tick = FALSE, cex.axis = 1
     )
     
