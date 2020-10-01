@@ -700,7 +700,7 @@ Indeed, an F-test for whether individual coefficients for each message improve t
 ## This chunk produces "Table 5: Message Effects" in the SI. 
 
 stargazer(
-  model_4, model_5, model_6, model_7, 
+  model_4, model_5, model_6, model_6a, 
   type = 'latex', 
   covariate.labels = c(
     'Any Message', 
