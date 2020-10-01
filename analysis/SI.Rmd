@@ -684,7 +684,7 @@ model_5 <- d[treat %in% 0:4 & !(historyCode2016 == 'E'),
                lm(outcome ~ factor(treat))]
 model_6 <- d[treat %in% 0:4 & !(historyCode2016 == 'E'), 
              felm(outcome ~ factor(treat) | congressionalDistrict)]
-model_7 <- d[treat %in% 0:4 & !(historyCode2016 == 'E'), 
+model_6a <- d[treat %in% 0:4 & !(historyCode2016 == 'E'), 
              felm(outcome ~ factor(treat) + factor(major_party) + 
                     race3 + age + I(age^2) + registrationYear| congressionalDistrict)]
 
@@ -735,7 +735,7 @@ stargazer(
 
 ## This chunk produces "Figure 6: Message Effects" in the SI. 
 
-plot_message(model_7, make_pdf = FALSE, file = 'message_effects.pdf')
+plot_message(model_6a, make_pdf = FALSE, file = 'message_effects.pdf')
 ```
 
 
