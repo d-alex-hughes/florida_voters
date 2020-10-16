@@ -1,0 +1,55 @@
+\documentclass[12pt]{article}  
+\usepackage[left=1.00in, right=1.00in, top=1.00in, bottom=1.00in]{geometry}
+\usepackage{natbib}
+\usepackage{setspace}
+\usepackage{mathtools}
+\usepackage{authblk}
+\usepackage{dcolumn}
+\usepackage{rotating}
+\setlength{\bibsep}{0pt plus 0.3ex}
+\usepackage[T1]{fontenc}
+\usepackage{mathpazo}
+\usepackage{graphicx}
+\usepackage{booktabs}
+%%\usepackage[english]{babel}
+\usepackage{blindtext}
+\usepackage{endnotes}
+\usepackage{xr}
+\externaldocument{SI}
+\usepackage{multirow}
+\usepackage{dcolumn}
+\usepackage[usenames,dvipsnames]{xcolor}
+\usepackage[colorlinks=true,
+citecolor=BrickRed,linkcolor=NavyBlue]{hyperref}
+
+\newcolumntype{d}[1]{D{.}{.}{#1}}
+
+\externaldocument{FL_GOTV_App}
+
+\begin{document}
+
+\author[1]{Michael U. Rivera\thanks{We are grateful for comments from
+    attendees of the 2017 State Politics and Policy Conference.}}
+\author[1]{D. Alex Hughes} \author[2,3]{Micah Gell-Redman}
+\affil[1]{School of Information, University of California, Berkeley}
+\affil[2]{Department of International Affairs, University of Georgia}
+\affil[3]{Department of Health Policy \& Management, University of
+  Georgia}
+
+\renewcommand\Authands{ and }
+
+\title{Email Mobilization Messages Suppress Turnout Among Black and Latino Voters:\\
+  Experimental Evidence From the 2016 General Election\thanks{This
+    research was approved by the institutional review board of the
+    University of Texas, Austin.  The data, code, and compute
+    environment required to replicate all analyses in this article are
+    available at the Journal of Experimental Political Science
+    Dataverse within the Harvard Dataverse Network, at:
+    https://doi.org/10.7910/DVN/YIZEA7 \citep{rivera2020}.}}  \date{\today}
+
+\maketitle
+
+\bibliographystyle{apsr}
+\bibliography{references}
+
+\end{document} 
