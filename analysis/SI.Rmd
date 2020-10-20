@@ -165,7 +165,7 @@ rownames(summary_table) <- c(
 )
 
 colnames(summary_table) <- c(
-  'All Data', 'Valid Email', 
+  'All Data', 'Provide Email', 
   'Assigned Treatment', 'Analytic Sample'
   )
 ```
@@ -370,8 +370,6 @@ In the next plot we report the power achieved when comparing any one condition a
   \caption{\textbf{Left Plot: Any Message vs. Control}. Plotted is the power curve for a scenario comparing the  400,000 voters in any treatment group (100,000 per message) against the 100,000 voters in the control group. The vertical line is drawn at the achieved treatment effect reported in the main body of the text. The dashed vertical line is drawn at the minimum detectable effect given this sample and design. The solid vertical line is drawn at the achieved treatment effect reported in the main body of the text. \label{fig:total_power} \textbf{Right Plot: Message vs. Message}. Plotted is the power curve for a scenario comparing  100,000 voters in any one message group against 100,000 from another message group. The vertical line is drawn at the largest difference in message effects observed in this analysis. Even the largest effect is under-powered.\label{fig:power_by_message}}
   \end{center}
 \end{figure}
-
-
 
 ### Power: Racial/Ethnic Groups, Any Message vs. Control
 
@@ -613,7 +611,6 @@ This simple difference in means produces an estimate of the treatment effect of 
 ### Estimation Details For Main Model
 \label{x:est-details}
 
-
 We use regression with robust standard errors to estimate the causal effects of email contact @wooldridge2010econometric, @gerber2012. To measure the effects of any form of contact, we estimate the following regression:
 
 \begin{equation}
@@ -732,7 +729,6 @@ stargazer(
 ### Figure 6: Message Effects
 
 ```{r figure 6: message effects, echo = FALSE}
-
 ## This chunk produces "Figure 6: Message Effects" in the SI. 
 
 plot_message(model_6a, make_pdf = FALSE, file = 'message_effects.pdf')
@@ -760,6 +756,8 @@ model_9 <- d[
        + age + I(age^2) | congressionalDistrict)]
 ```
 
+
+
 ### Table 6: Message Effect, by Racial/Ethnic Subgroup
 
 ```{r table 6, echo = FALSE, results = 'asis'}
@@ -784,11 +782,13 @@ stargazer(
 ### Figure 7: Subgroup Effects
 
 ```{r figure 7, echo = FALSE, results = FALSE} 
-
 ## This chunk produces "Figure 7: Subgroup Effects" in the SI. 
 
 plot_subgroup(
-  model_7, model_8, model_9, model_2,
+  model_all = model_6a, 
+  model_white = model_7, 
+  model_latino = model_8,
+  model_black = model_9,
   make_pdf = TRUE, file = 'subgroup_effects.pdf'
   )
 ```
